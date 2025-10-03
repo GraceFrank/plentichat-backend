@@ -1,4 +1,4 @@
-import Fastify from 'fastify';
+import Fastify, { FastifyRequest } from 'fastify';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
@@ -49,12 +49,19 @@ async function registerRoutes() {
 // Error handler
 fastify.setErrorHandler(errorHandler);
 
+// Extend FastifyRequest to include rawBody
+declare module 'fastify' {
+  interface FastifyRequest {
+    rawBody?: Buffer;
+  }
+}
+
 // Raw body plugin for webhook signature verification
 fastify.addContentTypeParser(
   'application/json',
   { parseAs: 'buffer' },
-  async (req, body: Buffer) => {
-    (req as any).rawBody = body;
+  async (req: FastifyRequest, body: Buffer) => {
+    req.rawBody = body;
     return JSON.parse(body.toString());
   }
 );

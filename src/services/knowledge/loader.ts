@@ -6,7 +6,7 @@ import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/
 import { Document } from "@langchain/core/documents";
 import { JSONLoader } from "langchain/document_loaders/fs/json";
 
-import { SourceType } from "../types/knowledge";
+import { SourceType } from "@/types/knowledge";
 
 export async function loadSource({
   sourceType,

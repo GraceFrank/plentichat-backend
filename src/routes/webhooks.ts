@@ -117,11 +117,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
   });
 
   // POST - Webhook events
-  fastify.post('/webhooks/instagram', {
-    config: {
-      rawBody: true,
-    },
-  }, async (request: FastifyRequest, reply: FastifyReply) => {
+  fastify.post('/webhooks/instagram', async (request: FastifyRequest, reply: FastifyReply) => {
     const signature = request.headers['x-hub-signature-256'] as string;
 
     if (!signature) {
@@ -129,7 +125,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
       return reply.status(401).send({ error: 'Missing signature' });
     }
 
-    const rawBody = (request as any).rawBody as Buffer;
+    const rawBody = request.rawBody as Buffer;
 
     const isValid = verifyWebhookSignature(rawBody, signature, env.INSTAGRAM_APP_SECRET);
 
@@ -139,7 +135,7 @@ export async function webhookRoutes(fastify: FastifyInstance) {
     }
 
     const payload: WebhookPayload = JSON.parse(rawBody.toString());
-    logger.info('Webhook payload received', { entryCount: payload.entry.length });
+    logger.info({ entryCount: payload.entry.length }, 'Webhook payload received');
 
     // Process in background, return 200 immediately
     setImmediate(async () => {

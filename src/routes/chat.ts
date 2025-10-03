@@ -11,9 +11,9 @@ interface ChatBody {
 }
 
 export async function chatRoutes(fastify: FastifyInstance) {
-  fastify.post('/chat/message', {
+  fastify.post<{ Body: ChatBody }>('/chat/message', {
     preHandler: authMiddleware,
-  }, async (request: FastifyRequest<{ Body: ChatBody }>, reply: FastifyReply) => {
+  }, async (request, reply) => {
     const { assistantId, text } = request.body;
     const userId = request.user?.id;
 

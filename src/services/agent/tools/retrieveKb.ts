@@ -17,7 +17,7 @@ export function makeRetrieveTool(
       topK: z.number().min(1).max(10).default(4).describe("Number of results"),
     }),
 
-    func: async ({ query, topK }) => {
+    func: async ({ query, topK }: { query: string; topK: number }) => {
       const hits = await retrieveFromSupabase({
         assistantId: assistant.id,
         query,
