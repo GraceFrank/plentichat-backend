@@ -6,7 +6,7 @@ dotenv.config();
 const envSchema = z.object({
   // Server
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
-  PORT: z.string().transform(Number).default('3001'),
+  PORT: z.string().transform(Number),
   HOST: z.string().default('0.0.0.0'),
 
   // Supabase
@@ -18,7 +18,7 @@ const envSchema = z.object({
   META_VERIFY_TOKEN: z.string(),
 
   // Google Cloud KMS
-  GOOGLE_CLOUD_PROJECT: z.string(),
+  GOOGLE_PROJECT_ID: z.string(),
   GOOGLE_CLOUD_KMS_KEY_RING: z.string(),
   GOOGLE_CLOUD_KMS_KEY: z.string(),
   GOOGLE_CLOUD_KMS_LOCATION: z.string(),

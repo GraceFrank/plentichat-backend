@@ -3,14 +3,14 @@ import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import rateLimit from '@fastify/rate-limit';
 import { env } from '@/config/env';
-import { logger } from '@/config/logger';
+import { logger, fastifyLoggerConfig } from '@/config/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import { webhookRoutes } from '@/routes/webhooks';
 import { chatRoutes } from '@/routes/chat';
 import { healthRoutes } from '@/routes/health';
 
 const fastify = Fastify({
-  logger,
+  logger: fastifyLoggerConfig,
   bodyLimit: 10485760, // 10MB
   trustProxy: true,
   disableRequestLogging: env.NODE_ENV === 'production',

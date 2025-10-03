@@ -6,14 +6,14 @@ let kmsClient: KeyManagementServiceClient | null = null;
 function getKMSClient(): KeyManagementServiceClient {
   if (!kmsClient) {
     kmsClient = new KeyManagementServiceClient({
-      projectId: env.GOOGLE_CLOUD_PROJECT,
+      projectId: env.GOOGLE_PROJECT_ID,
     });
   }
   return kmsClient;
 }
 
 function getKeyName(): string {
-  return `projects/${env.GOOGLE_CLOUD_PROJECT}/locations/${env.GOOGLE_CLOUD_KMS_LOCATION}/keyRings/${env.GOOGLE_CLOUD_KMS_KEY_RING}/cryptoKeys/${env.GOOGLE_CLOUD_KMS_KEY}`;
+  return `projects/${env.GOOGLE_PROJECT_ID}/locations/${env.GOOGLE_CLOUD_KMS_LOCATION}/keyRings/${env.GOOGLE_CLOUD_KMS_KEY_RING}/cryptoKeys/${env.GOOGLE_CLOUD_KMS_KEY}`;
 }
 
 export async function encryptToken(plaintext: string): Promise<string> {

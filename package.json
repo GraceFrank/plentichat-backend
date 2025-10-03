@@ -4,13 +4,19 @@
   "description": "PlentiChat AI Agent Backend Server",
   "main": "dist/server.js",
   "scripts": {
-    "dev": "tsx watch src/server.ts",
+    "dev": "docker-compose -f docker-compose.dev.yml up --build",
+    "dev:local": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
     "test": "jest"
   },
-  "keywords": ["fastify", "ai", "instagram", "webhook"],
+  "keywords": [
+    "fastify",
+    "ai",
+    "instagram",
+    "webhook"
+  ],
   "author": "",
   "license": "MIT",
   "dependencies": {
@@ -28,6 +34,7 @@
     "d3-dsv": "2",
     "dotenv": "^16.4.5",
     "fastify": "^5.2.0",
+    "langsmith": "^0.3.72",
     "mammoth": "^1.10.0",
     "pdf-parse": "^1.1.1",
     "pino": "^9.6.0",
@@ -41,6 +48,7 @@
     "@typescript-eslint/eslint-plugin": "^8.19.1",
     "@typescript-eslint/parser": "^8.19.1",
     "eslint": "^9.17.0",
+    "nodemon": "^3.1.10",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   }
