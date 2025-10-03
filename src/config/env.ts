@@ -10,7 +10,7 @@ const envSchema = z.object({
   HOST: z.string().default('0.0.0.0'),
 
   // Supabase
-  NEXT_PUBLIC_SUPABASE_URL: z.string().url(),
+  SUPABASE_URL: z.string().url(),
   SUPABASE_API_KEY: z.string(),
 
   // Instagram/Meta
