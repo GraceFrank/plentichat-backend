@@ -19,6 +19,8 @@ const envSchema = z.object({
 
   // Google Cloud KMS
   GOOGLE_PROJECT_ID: z.string(),
+  GOOGLE_CLIENT_EMAIL: z.string(),
+  GOOGLE_PRIVATE_KEY: z.string(),
   GOOGLE_CLOUD_KMS_KEY_RING: z.string(),
   GOOGLE_CLOUD_KMS_KEY: z.string(),
   GOOGLE_CLOUD_KMS_LOCATION: z.string(),

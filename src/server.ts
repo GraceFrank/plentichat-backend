@@ -42,8 +42,8 @@ async function registerPlugins() {
 // Register routes
 async function registerRoutes() {
   await fastify.register(healthRoutes);
-  await fastify.register(webhookRoutes);
-  await fastify.register(chatRoutes);
+  await fastify.register(webhookRoutes, { prefix: '/api' });
+  await fastify.register(chatRoutes, { prefix: '/api' });
 }
 
 // Error handler

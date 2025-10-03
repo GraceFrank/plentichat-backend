@@ -101,11 +101,11 @@ export async function webhookRoutes(fastify: FastifyInstance) {
   fastify.get('/webhooks/instagram', async (request: FastifyRequest, reply: FastifyReply) => {
     const query = request.query as { 'hub.mode'?: string; 'hub.verify_token'?: string; 'hub.challenge'?: string };
 
-    logger.info('Received webhook verification request', {
+    logger.info({
       mode: query['hub.mode'],
       hasToken: !!query['hub.verify_token'],
       hasChallenge: !!query['hub.challenge'],
-    });
+    }, 'Received webhook verification request');
 
     if (query['hub.mode'] === 'subscribe' && query['hub.verify_token'] === env.META_VERIFY_TOKEN) {
       logger.info('Webhook verification successful');
