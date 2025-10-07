@@ -43,6 +43,11 @@ interface SendMessageBody {
   userId: string;
 }
 
+interface GetMessagesQuery {
+  userId: string;
+  conversationId: string;
+}
+
 export class InstagramController {
   /**
    * Get all conversations for a user's Instagram accounts
@@ -86,13 +91,13 @@ export class InstagramController {
             continue;
           }
 
-          // Fetch conversations from Instagram API
+          // Fetch conversations from Instagram API (without messages)
           const conversationsResponse = await axios.get(
             `https://graph.instagram.com/v23.0/${igUserId}/conversations`,
             {
               params: {
                 access_token: accessToken,
-                fields: 'id,participants,messages{id,from,to,message,created_time},updated_time',
+                fields: 'id,participants,updated_time',
               },
             }
           );
@@ -141,34 +146,10 @@ export class InstagramController {
               }, 'Failed to fetch participant details');
             }
 
-            // Transform messages
-            const messages: ConversationMessage[] = (conv.messages?.data || []).map(
-              (msg: {
-                id: string;
-                from: { id: string; username?: string };
-                to: { id: string; username?: string };
-                message: string;
-                created_time: string;
-              }) => ({
-                id: msg.id,
-                from: {
-                  id: msg.from.id,
-                  username: msg.from.username || 'Unknown',
-                },
-                to: {
-                  id: msg.to.id,
-                  username: msg.to.username || 'Unknown',
-                },
-                message: msg.message,
-                created_time: msg.created_time,
-                is_from_me: msg.from.id === igUserId,
-              })
-            );
-
             allConversations.push({
               id: conv.id,
               participant: participantDetails,
-              messages,
+              messages: [], // Messages will be fetched separately
               updated_time: conv.updated_time,
               unread_count: 0,
             });
@@ -192,6 +173,94 @@ export class InstagramController {
       return reply.status(500).send({
         success: false,
         error: 'Failed to fetch conversations',
+      });
+    }
+  }
+
+  /**
+   * Get messages for a specific conversation
+   */
+  static async getMessages(
+    request: FastifyRequest<{ Querystring: GetMessagesQuery }>,
+    reply: FastifyReply
+  ) {
+    try {
+      const { userId, conversationId } = request.query;
+
+      if (!userId || !conversationId) {
+        return reply.status(400).send({
+          success: false,
+          error: 'userId and conversationId are required',
+        });
+      }
+
+      const supabase = getSupabaseClient();
+
+      // Get user's Instagram accounts
+      const socialAccounts = await SocialAccount.findByUserId(supabase, userId, 'instagram');
+
+      if (socialAccounts.length === 0) {
+        return reply.status(404).send({
+          success: false,
+          error: 'No active Instagram account found',
+        });
+      }
+
+      // Use the first active account
+      const account = socialAccounts[0];
+      const accessToken = await account.getAccessToken();
+      const igUserId = account.platformUserId;
+
+      if (!igUserId) {
+        return reply.status(400).send({
+          success: false,
+          error: 'Account missing platform_user_id',
+        });
+      }
+
+      // Fetch messages for the specific conversation
+      const messagesResponse = await axios.get(
+        `https://graph.instagram.com/v23.0/${conversationId}`,
+        {
+          params: {
+            access_token: accessToken,
+            fields: 'messages{id,from,to,message,created_time}',
+          },
+        }
+      );
+
+      const messages: ConversationMessage[] = (messagesResponse.data.messages?.data || []).map(
+        (msg: {
+          id: string;
+          from: { id: string; username?: string };
+          to: { id: string; username?: string };
+          message: string;
+          created_time: string;
+        }) => ({
+          id: msg.id,
+          from: {
+            id: msg.from.id,
+            username: msg.from.username || 'Unknown',
+          },
+          to: {
+            id: msg.to.id,
+            username: msg.to.username || 'Unknown',
+          },
+          message: msg.message,
+          created_time: msg.created_time,
+          is_from_me: msg.from.id === igUserId,
+        })
+      );
+
+      return reply.send({
+        success: true,
+        data: messages,
+      });
+    } catch (error) {
+      logger.error({ err: error }, 'Error in getMessages controller');
+      return reply.status(500).send({
+        success: false,
+        error: 'Failed to fetch messages',
       });
     }
   }
