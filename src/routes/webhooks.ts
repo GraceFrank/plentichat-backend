@@ -101,6 +101,27 @@ async function processMessage(messaging: Messaging) {
 }
 
 export async function webhookRoutes(fastify: FastifyInstance) {
+  // DEBUG ENDPOINT - Remove in production
+  if (env.NODE_ENV !== 'production') {
+    fastify.post('/webhooks/instagram/debug', async (request: FastifyRequest, reply: FastifyReply) => {
+      const rawBody = request.rawBody as Buffer;
+      const receivedSignature = request.headers['x-hub-signature-256'] as string;
+
+      const expectedSignature = crypto
+        .createHmac('sha256', env.INSTAGRAM_APP_SECRET)
+        .update(rawBody)
+        .digest('hex');
+
+      return reply.send({
+        receivedSignature,
+        expectedSignature: `sha256=${expectedSignature}`,
+        match: receivedSignature === `sha256=${expectedSignature}`,
+        rawBodyLength: rawBody.length,
+        rawBodyPreview: rawBody.toString().substring(0, 100)
+      });
+    });
+  }
+
   // GET - Webhook verification
   fastify.get('/webhooks/instagram', async (request: FastifyRequest, reply: FastifyReply) => {
     const query = request.query as { 'hub.mode'?: string; 'hub.verify_token'?: string; 'hub.challenge'?: string };
