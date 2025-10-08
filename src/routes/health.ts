@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseServiceClient } from '@/lib/supabase';
 
 export async function healthRoutes(fastify: FastifyInstance) {
   fastify.get('/health', async (_request, reply) => {
@@ -12,8 +12,8 @@ export async function healthRoutes(fastify: FastifyInstance) {
 
   fastify.get('/health/ready', async (_request, reply) => {
     try {
-      // Check Supabase connection
-      const supabase = getSupabaseClient();
+      // Check Supabase connection - use service client for health check
+      const supabase = getSupabaseServiceClient();
       const { error } = await supabase.from('assistants').select('count').limit(1);
 
       if (error) {
