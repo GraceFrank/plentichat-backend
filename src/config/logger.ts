@@ -11,7 +11,14 @@ export const logger = pino({
       translateTime: 'HH:MM:ss Z',
       ignore: 'pid,hostname',
     },
-  } : undefined,
+  } : {
+    target: 'pino-pretty',
+    options: {
+      colorize: false,
+      translateTime: 'yyyy-mm-dd HH:MM:ss',
+      ignore: 'pid,hostname',
+    },
+  },
   formatters: {
     level: (label) => {
       return { level: label };
@@ -36,5 +43,14 @@ export const fastifyLoggerConfig = {
       singleLine: false,
       append: '\n',
     },
-  } : undefined,
+  } : {
+    target: 'pino-pretty',
+    options: {
+      colorize: false,
+      translateTime: 'yyyy-mm-dd HH:MM:ss',
+      ignore: 'pid,hostname',
+      singleLine: false,
+      append: '\n',
+    },
+  },
 };

@@ -82,6 +82,9 @@ async function processMessage(messaging: Messaging) {
       ? lastMessage.content
       : JSON.stringify(lastMessage.content);
 
+  // Add AI disclosure to the message
+  const messageWithDisclosure = `${agentResponse}\n\n---\nThis message was sent by AI`;
+
   logger.info(`Agent response: "${agentResponse}"`);
 
   const decryptedToken = await decryptToken(socialAccount.access_token as string);
@@ -90,8 +93,8 @@ async function processMessage(messaging: Messaging) {
     igId: recipientId,
     recipientId: senderId,
     accessToken: decryptedToken,
-    text: agentResponse,
-    message: { text: agentResponse },
+    text: messageWithDisclosure,
+    message: { text: messageWithDisclosure },
   });
 
   logger.info(`Successfully sent response to ${senderId}`);

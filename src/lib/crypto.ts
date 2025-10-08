@@ -5,11 +5,16 @@ let kmsClient: KeyManagementServiceClient | null = null;
 
 function getKMSClient(): KeyManagementServiceClient {
   if (!kmsClient) {
+    // Handle both literal \n and actual newlines in private key
+    const privateKey = env.GOOGLE_PRIVATE_KEY.includes('\\n')
+      ? env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : env.GOOGLE_PRIVATE_KEY;
+
     kmsClient = new KeyManagementServiceClient({
       projectId: env.GOOGLE_PROJECT_ID,
       credentials: {
         client_email: env.GOOGLE_CLIENT_EMAIL,
-        private_key: env.GOOGLE_PRIVATE_KEY,
+        private_key: privateKey,
       },
     });
   }
