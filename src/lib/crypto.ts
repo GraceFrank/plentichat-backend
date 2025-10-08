@@ -9,10 +9,6 @@ function getKMSClient(): KeyManagementServiceClient {
     // Also handle double-escaped \\n from Coolify
     let privateKey = env.GOOGLE_PRIVATE_KEY;
 
-    console.log('\n=== DEBUG: Google KMS Private Key ===');
-    console.log('Original from Coolify (first 100 chars):', privateKey.substring(0, 100));
-    console.log('Contains \\n:', privateKey.includes('\\n'));
-
     // Replace any number of backslashes followed by 'n' with actual newline
     if (privateKey.includes('\\n')) {
       privateKey = privateKey.replace(/\\+n/g, '\n');
@@ -20,11 +16,6 @@ function getKMSClient(): KeyManagementServiceClient {
 
     // Remove any trailing backslashes
     privateKey = privateKey.replace(/\\+$/g, '');
-
-    console.log('After transformation (first 100 chars):', privateKey.substring(0, 100));
-    console.log('Starts with BEGIN:', privateKey.startsWith('-----BEGIN PRIVATE KEY-----'));
-    console.log('Ends with END:', privateKey.endsWith('-----END PRIVATE KEY-----'));
-    console.log('=== END DEBUG ===\n');
 
     kmsClient = new KeyManagementServiceClient({
       projectId: env.GOOGLE_PROJECT_ID,
