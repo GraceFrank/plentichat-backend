@@ -5,16 +5,17 @@ let kmsClient: KeyManagementServiceClient | null = null;
 
 function getKMSClient(): KeyManagementServiceClient {
   if (!kmsClient) {
-
-
-    console.log('\n\nGOOGLE_PRIVATE_KEY\n', env.GOOGLE_PRIVATE_KEY);
-
     // Handle both literal \n and actual newlines in private key
-    const privateKey = env.GOOGLE_PRIVATE_KEY.includes('\\n')
-      ? env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
-      : env.GOOGLE_PRIVATE_KEY;
+    // Also handle double-escaped \\n from Coolify
+    let privateKey = env.GOOGLE_PRIVATE_KEY;
 
-    console.log('\n\nprivateKey:\n', privateKey);
+    // Replace any number of backslashes followed by 'n' with actual newline
+    if (privateKey.includes('\\n')) {
+      privateKey = privateKey.replace(/\\+n/g, '\n');
+    }
+
+    // Remove any trailing backslashes
+    privateKey = privateKey.replace(/\\+$/g, '');
 
     kmsClient = new KeyManagementServiceClient({
       projectId: env.GOOGLE_PROJECT_ID,
