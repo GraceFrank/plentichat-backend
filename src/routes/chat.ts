@@ -46,7 +46,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     const finalReply = result.messages[result.messages.length - 1].content;
 
     // Add AI disclosure to the message
-    const replyWithDisclosure = `${finalReply}\n\n---\nThis message was sent by AI`;
+    const replyWithDisclosure = `${finalReply}\n\n*Sent by AI`;
 
     logger.info(`Chat response generated for assistant ${assistantId}`);
 

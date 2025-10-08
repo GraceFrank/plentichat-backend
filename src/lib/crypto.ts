@@ -10,7 +10,9 @@ function getKMSClient(): KeyManagementServiceClient {
     console.log('\n\nGOOGLE_PRIVATE_KEY\n', env.GOOGLE_PRIVATE_KEY);
 
     // Handle both literal \n and actual newlines in private key
-    const privateKey = env.GOOGLE_PRIVATE_KEY;
+    const privateKey = env.GOOGLE_PRIVATE_KEY.includes('\\n')
+      ? env.GOOGLE_PRIVATE_KEY.replace(/\\n/g, '\n')
+      : env.GOOGLE_PRIVATE_KEY;
 
     console.log('\n\nprivateKey:\n', privateKey);
 

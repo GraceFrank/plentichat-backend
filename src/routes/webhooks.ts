@@ -83,7 +83,7 @@ async function processMessage(messaging: Messaging) {
       : JSON.stringify(lastMessage.content);
 
   // Add AI disclosure to the message
-  const messageWithDisclosure = `${agentResponse}\n\n---\nThis message was sent by AI`;
+  const messageWithDisclosure = `${agentResponse}\n\n*Sent by AI`;
 
   logger.info(`Agent response: "${agentResponse}"`);
 
