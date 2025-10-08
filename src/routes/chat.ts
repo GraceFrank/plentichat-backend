@@ -1,6 +1,5 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import { buildRagGraph } from '@/services/agent/ragFactory';
-import { getSupabaseClient } from '@/lib/supabase';
 import { HumanMessage } from '@langchain/core/messages';
 import { authMiddleware } from '@/middleware/auth';
 import { logger } from '@/config/logger';
@@ -15,15 +14,14 @@ export async function chatRoutes(fastify: FastifyInstance) {
     preHandler: authMiddleware,
   }, async (request, reply) => {
     const { assistantId, text } = request.body;
-    const userId = request.user?.id;
+    const userId = request.user!.id;
+    const supabase = request.supabase!;
 
     if (!assistantId || !text) {
       return reply.status(400).send({ error: 'Missing assistantId or text' });
     }
 
     logger.info(`Chat request from user ${userId} to assistant ${assistantId}`);
-
-    const supabase = getSupabaseClient();
 
     const { data: assistant, error } = await supabase
       .from('assistants')
@@ -36,11 +34,8 @@ export async function chatRoutes(fastify: FastifyInstance) {
       return reply.status(404).send({ error: 'Assistant not found' });
     }
 
-    // Verify user owns this assistant
-    if (assistant.user_id !== userId) {
-      logger.warn(`User ${userId} attempted to access assistant ${assistantId} owned by ${assistant.user_id}`);
-      return reply.status(403).send({ error: 'Forbidden' });
-    }
+    // RLS will ensure user can only access their own assistants
+    // No need for manual check since RLS policies handle this
 
     const graph = buildRagGraph(assistant, supabase);
 

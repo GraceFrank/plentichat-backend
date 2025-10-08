@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
 import crypto from 'crypto';
 import { Messaging, WebhookPayload } from '@/types/webhook';
-import { getSupabaseClient } from '@/lib/supabase';
+import { getSupabaseServiceClient } from '@/lib/supabase';
 import { buildRagGraph } from '@/services/agent/ragFactory';
 import { HumanMessage } from '@langchain/core/messages';
 import { InstagramMessagingService } from '@/services/instagram';
@@ -40,7 +40,8 @@ async function processMessage(messaging: Messaging) {
   const messageText = message.text;
   logger.info(`Processing message from ${senderId} to ${recipientId}: "${messageText}"`);
 
-  const supabase = getSupabaseClient();
+  // Use service client for webhooks - they don't have user auth
+  const supabase = getSupabaseServiceClient();
 
   const { data: socialAccount, error: accountError } = await supabase
     .from('social_accounts')

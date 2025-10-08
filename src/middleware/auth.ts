@@ -1,5 +1,6 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { getSupabaseClient } from '@/lib/supabase';
+import { createSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export async function authMiddleware(
   request: FastifyRequest,
@@ -12,16 +13,18 @@ export async function authMiddleware(
   }
 
   const token = authHeader.substring(7);
-  const supabase = getSupabaseClient();
 
-  const { data: { user }, error } = await supabase.auth.getUser(token);
+  // Use service client only to verify the token
+  const serviceClient = getSupabaseServiceClient();
+  const { data: { user }, error } = await serviceClient.auth.getUser(token);
 
   if (error || !user) {
     return reply.status(401).send({ error: 'Unauthorized: Invalid token' });
   }
 
-  // Attach user to request
+  // Attach user and RLS-enabled Supabase client to request
   request.user = user;
+  request.supabase = createSupabaseClient(token);
 }
 
 declare module 'fastify' {
@@ -31,5 +34,6 @@ declare module 'fastify' {
       email?: string;
       [key: string]: any;
     };
+    supabase?: SupabaseClient;
   }
 }

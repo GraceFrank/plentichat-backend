@@ -11,7 +11,8 @@ const envSchema = z.object({
 
   // Supabase
   SUPABASE_URL: z.string().url(),
-  SUPABASE_API_KEY: z.string(),
+  SUPABASE_API_KEY: z.string(), // Service role key
+  SUPABASE_ANON_KEY: z.string(), // Public anon key for RLS
 
   // Instagram/Meta
   INSTAGRAM_APP_SECRET: z.string(),

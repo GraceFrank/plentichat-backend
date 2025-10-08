@@ -91,6 +91,27 @@ export class SocialAccount {
   }
 
   /**
+   * Find a single account by ID
+   */
+  static async findById(
+    supabase: SupabaseClient,
+    accountId: string
+  ): Promise<SocialAccount | null> {
+    const { data, error } = await supabase
+      .from('social_accounts')
+      .select('*')
+      .eq('id', accountId)
+      .eq('is_active', true)
+      .single();
+
+    if (error || !data) {
+      return null;
+    }
+
+    return new SocialAccount(data as SocialAccountData);
+  }
+
+  /**
    * Find active Instagram accounts for a user
    */
   static async findByUserId(
@@ -166,30 +187,7 @@ export class SocialAccount {
     };
   }
 
-  /**
-   * Find an account by id for a given user and platform
-   */
-  static async findByIdForUser(
-    supabase: SupabaseClient,
-    accountId: string,
-    userId: string,
-    platform: string = 'instagram'
-  ): Promise<SocialAccount | null> {
-    const { data, error } = await supabase
-      .from('social_accounts')
-      .select('*')
-      .eq('id', accountId)
-      .eq('user_id', userId)
-      .eq('platform', platform)
-      .eq('is_active', true)
-      .single();
 
-    if (error || !data) {
-      return null;
-    }
-
-    return new SocialAccount(data as SocialAccountData);
-  }
 
   /**
    * Update account status

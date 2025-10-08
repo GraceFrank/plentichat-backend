@@ -1,5 +1,4 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { getSupabaseClient } from '@/lib/supabase';
 import { InstagramMessagingService } from '@/services/instagram';
 import { SocialAccount } from '@/models/SocialAccount';
 import { logger } from '@/config/logger';
@@ -34,17 +33,15 @@ interface Conversation {
 }
 
 interface GetConversationsQuery {
-  userId: string;
+  // No query params needed - userId comes from auth token
 }
 
 interface SendMessageBody {
   recipientId: string;
   message: string;
-  userId: string;
 }
 
 interface GetMessagesQuery {
-  userId: string;
   conversationId: string;
 }
 
@@ -57,16 +54,8 @@ export class InstagramController {
     reply: FastifyReply
   ) {
     try {
-      const { userId } = request.query;
-
-      if (!userId) {
-        return reply.status(400).send({
-          success: false,
-          error: 'userId is required',
-        });
-      }
-
-      const supabase = getSupabaseClient();
+      const userId = request.user!.id;
+      const supabase = request.supabase!;
 
       // Get user's Instagram accounts using the model
       const socialAccounts = await SocialAccount.findByUserId(supabase, userId, 'instagram');
@@ -185,16 +174,16 @@ export class InstagramController {
     reply: FastifyReply
   ) {
     try {
-      const { userId, conversationId } = request.query;
+      const userId = request.user!.id;
+      const supabase = request.supabase!;
+      const { conversationId } = request.query;
 
-      if (!userId || !conversationId) {
+      if (!conversationId) {
         return reply.status(400).send({
           success: false,
-          error: 'userId and conversationId are required',
+          error: 'conversationId is required',
         });
       }
-
-      const supabase = getSupabaseClient();
 
       // Get user's Instagram accounts
       const socialAccounts = await SocialAccount.findByUserId(supabase, userId, 'instagram');
@@ -273,16 +262,16 @@ export class InstagramController {
     reply: FastifyReply
   ) {
     try {
-      const { recipientId, message, userId } = request.body;
+      const userId = request.user!.id;
+      const supabase = request.supabase!;
+      const { recipientId, message } = request.body;
 
-      if (!recipientId || !message || !userId) {
+      if (!recipientId || !message) {
         return reply.status(400).send({
           success: false,
-          error: 'recipientId, message, and userId are required',
+          error: 'recipientId and message are required',
         });
       }
-
-      const supabase = getSupabaseClient();
 
       // Get user's Instagram accounts
       const socialAccounts = await SocialAccount.findByUserId(supabase, userId, 'instagram');
