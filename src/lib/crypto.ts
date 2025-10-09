@@ -1,4 +1,5 @@
 import { KeyManagementServiceClient } from '@google-cloud/kms';
+import { GoogleAuth } from 'google-auth-library';
 import { env } from '@/config/env';
 
 let kmsClient: KeyManagementServiceClient | null = null;
@@ -17,12 +18,17 @@ function getKMSClient(): KeyManagementServiceClient {
     // Remove any trailing backslashes
     privateKey = privateKey.replace(/\\+$/g, '');
 
-    kmsClient = new KeyManagementServiceClient({
+    const auth = new GoogleAuth({
       projectId: env.GOOGLE_PROJECT_ID,
       credentials: {
         client_email: env.GOOGLE_CLIENT_EMAIL,
         private_key: privateKey,
       },
+    });
+
+    kmsClient = new KeyManagementServiceClient({
+      projectId: env.GOOGLE_PROJECT_ID,
+      auth,
     });
   }
   return kmsClient;

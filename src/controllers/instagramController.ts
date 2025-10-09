@@ -33,7 +33,7 @@ interface Conversation {
 }
 
 interface GetConversationsQuery {
-  // No query params needed - userId comes from auth token
+  social_account_id?: string;
 }
 
 interface SendMessageBody {
@@ -43,6 +43,7 @@ interface SendMessageBody {
 
 interface GetMessagesQuery {
   conversationId: string;
+  social_account_id?: string;
 }
 
 export class InstagramController {
@@ -54,99 +55,112 @@ export class InstagramController {
     reply: FastifyReply
   ) {
     try {
-      const userId = request.user!.id;
       const supabase = request.supabase!;
+      const accountId = request.query.social_account_id;
 
-      // Get user's Instagram accounts using the model
-      const socialAccounts = await SocialAccount.findByUserId(supabase, userId, 'instagram');
-
-      if (socialAccounts.length === 0) {
+      if (!accountId) {
         return reply.send({
           success: true,
           data: [],
         });
       }
 
+
+      // Get user's Instagram accounts using the model (don't filter by is_active)
+      const socialAccount = await SocialAccount.findById(supabase, accountId, undefined);
+
+      if (!socialAccount) {
+        return reply.send({
+          success: true,
+          data: [],
+        });
+      }
       const allConversations: Conversation[] = [];
 
       // Fetch conversations for each account
-      for (const account of socialAccounts) {
-        try {
-          const accessToken = await account.getAccessToken();
-          const igUserId = account.platformUserId;
+      try {
+        const accessToken = await socialAccount.getAccessToken();
+        const igUserId = socialAccount.platformUserId;
 
-          if (!igUserId) {
-            logger.warn({ accountId: account.id }, 'Account missing platform_user_id');
-            continue;
+        console.log(socialAccount)
+
+        if (!igUserId) {
+          logger.warn({ accountId: socialAccount.id }, 'Account missing platform_user_id');
+          return reply.send({ success: true, data: [] });
+        }
+
+        // Fetch conversations from Instagram API (without messages)
+        const conversationsResponse = await axios.get(
+          `https://graph.instagram.com/v23.0/me/conversations`,
+          {
+            params: {
+              platform: "instagram",
+              access_token: accessToken,
+              fields: 'id,participants,updated_time',
+            },
           }
+        );
 
-          // Fetch conversations from Instagram API (without messages)
-          const conversationsResponse = await axios.get(
-            `https://graph.instagram.com/v23.0/${igUserId}/conversations`,
-            {
-              params: {
-                access_token: accessToken,
-                fields: 'id,participants,updated_time',
-              },
-            }
+        console.log("\n\n\n\n\n\nCONVERSATION response:\n", JSON.stringify(conversationsResponse.data, null, 2));
+        console.log("\nInstagram API status:", conversationsResponse.status + "\n\n\n\n\n");
+
+
+        const conversations = conversationsResponse.data.data || [];
+
+        // Transform conversations
+        for (const conv of conversations) {
+          // Get participant info (the other person in the conversation)
+          const participant = conv.participants?.data?.find(
+            (p: { id: string }) => p.id !== igUserId
           );
 
-          const conversations = conversationsResponse.data.data || [];
+          console.log('participant', JSON.stringify(participant, null, 2));
 
-          // Transform conversations
-          for (const conv of conversations) {
-            // Get participant info (the other person in the conversation)
-            const participant = conv.participants?.data?.find(
-              (p: { id: string }) => p.id !== igUserId
+          if (!participant) continue;
+
+          // Fetch participant details
+          let participantDetails = {
+            id: participant.id,
+            username: participant.username || 'Unknown',
+            name: undefined,
+            profile_picture_url: undefined,
+          };
+
+          try {
+            const userResponse = await axios.get(
+              `https://graph.instagram.com/v23.0/${participant.id}`,
+              {
+                params: {
+                  access_token: accessToken,
+                  fields: 'id,username,name,profile_pic',
+                },
+              }
             );
-
-            console.log('participant', JSON.stringify(participant, null, 2));
-
-            if (!participant) continue;
-
-            // Fetch participant details
-            let participantDetails = {
-              id: participant.id,
-              username: participant.username || 'Unknown',
-              name: undefined,
-              profile_picture_url: undefined,
+            participantDetails = {
+              ...participantDetails,
+              username: userResponse.data.username || participantDetails.username,
+              name: userResponse.data.name,
+              profile_picture_url: userResponse.data.profile_pic,
             };
-
-            try {
-              const userResponse = await axios.get(
-                `https://graph.instagram.com/v23.0/${participant.id}`,
-                {
-                  params: {
-                    access_token: accessToken,
-                    fields: 'id,username,name,profile_pic',
-                  },
-                }
-              );
-              participantDetails = {
-                ...participantDetails,
-                username: userResponse.data.username || participantDetails.username,
-                name: userResponse.data.name,
-                profile_picture_url: userResponse.data.profile_pic,
-              };
-            } catch (err: any) {
-              logger.warn({
-                err: err.response?.data || err.message,
-                participantId: participant.id
-              }, 'Failed to fetch participant details');
-            }
-
-            allConversations.push({
-              id: conv.id,
-              participant: participantDetails,
-              messages: [], // Messages will be fetched separately
-              updated_time: conv.updated_time,
-              unread_count: 0,
-            });
+          } catch (err: any) {
+            logger.warn({
+              err: err.response?.data || err.message,
+              participantId: participant.id
+            }, 'Failed to fetch participant details');
           }
-        } catch (err) {
-          logger.error({ err, accountId: account.id }, 'Error fetching conversations for account');
+
+          allConversations.push({
+            id: conv.id,
+            participant: participantDetails,
+            messages: [], // Messages will be fetched separately
+            updated_time: conv.updated_time,
+            unread_count: 0,
+          });
         }
+      } catch (err) {
+        logger.error({ err, accountId: socialAccount.id }, 'Error fetching conversations for account');
       }
+
 
       // Sort by updated_time
       allConversations.sort(
@@ -174,7 +188,8 @@ export class InstagramController {
     reply: FastifyReply
   ) {
     try {
-      const userId = request.user!.id;
+      const accountId = request.query.social_account_id;
+      if (!accountId) return []
       const supabase = request.supabase!;
       const { conversationId } = request.query;
 
@@ -186,9 +201,9 @@ export class InstagramController {
       }
 
       // Get user's Instagram accounts
-      const socialAccounts = await SocialAccount.findByUserId(supabase, userId, 'instagram');
+      const socialAccount = await SocialAccount.findById(supabase, accountId);
 
-      if (socialAccounts.length === 0) {
+      if (!socialAccount) {
         return reply.status(404).send({
           success: false,
           error: 'No active Instagram account found',
@@ -196,9 +211,8 @@ export class InstagramController {
       }
 
       // Use the first active account
-      const account = socialAccounts[0];
-      const accessToken = await account.getAccessToken();
-      const igUserId = account.platformUserId;
+      const accessToken = await socialAccount.getAccessToken();
+      const igUserId = socialAccount.platformUserId;
 
       if (!igUserId) {
         return reply.status(400).send({
@@ -241,6 +255,9 @@ export class InstagramController {
         })
       );
 
+      // Sort messages by created_time ascending (oldest first)
+      messages.sort((a, b) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime());
+
       return reply.send({
         success: true,
         data: messages,
@@ -258,11 +275,12 @@ export class InstagramController {
    * Send a message to an Instagram user
    */
   static async sendMessage(
-    request: FastifyRequest<{ Body: SendMessageBody }>,
+    request: FastifyRequest<{ Body: SendMessageBody; Querystring: { social_account_id?: string } }>,
     reply: FastifyReply
   ) {
     try {
-      const userId = request.user!.id;
+      const accountId = request.query.social_account_id;
+      if (!accountId) return []
       const supabase = request.supabase!;
       const { recipientId, message } = request.body;
 
@@ -274,9 +292,9 @@ export class InstagramController {
       }
 
       // Get user's Instagram accounts
-      const socialAccounts = await SocialAccount.findByUserId(supabase, userId, 'instagram');
+      const socialAccount = await SocialAccount.findById(supabase, accountId);
 
-      if (socialAccounts.length === 0) {
+      if (!socialAccount) {
         return reply.status(404).send({
           success: false,
           error: 'No active Instagram account found',
@@ -284,9 +302,8 @@ export class InstagramController {
       }
 
       // Use the first active account
-      const account = socialAccounts[0];
-      const accessToken = await account.getAccessToken();
-      const igUserId = account.platformUserId;
+      const accessToken = await socialAccount.getAccessToken();
+      const igUserId = socialAccount.platformUserId;
 
       if (!igUserId) {
         return reply.status(400).send({

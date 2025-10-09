@@ -95,14 +95,29 @@ export class SocialAccount {
    */
   static async findById(
     supabase: SupabaseClient,
-    accountId: string
+    accountId: string,
+    isActive?: boolean
   ): Promise<SocialAccount | null> {
-    const { data, error } = await supabase
+    console.log('SocialAccount.findById - accountId:', accountId, 'isActive:', isActive);
+
+    const query = supabase
       .from('social_accounts')
       .select('*')
-      .eq('id', accountId)
-      .eq('is_active', true)
-      .single();
+      .eq('id', accountId);
+
+    // Only filter by is_active if explicitly provided
+    if (isActive !== undefined) {
+      query.eq('is_active', isActive);
+    }
+
+    const { data, error } = await query.single();
+
+    console.log('SocialAccount.findById - Result:', {
+      found: !!data,
+      error: error?.message,
+      code: error?.code,
+      isActive: data?.is_active
+    });
 
     if (error || !data) {
       return null;
