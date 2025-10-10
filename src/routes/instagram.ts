@@ -15,6 +15,10 @@ interface SendMessageBody {
   message: string;
 }
 
+interface SendMessageQuery {
+  social_account_id?: string;
+}
+
 export async function instagramRoutes(fastify: FastifyInstance) {
   // GET /api/instagram/conversations - Fetch Instagram conversations
   fastify.get<{ Querystring: GetConversationsQuery }>('/instagram/conversations', {
@@ -27,7 +31,7 @@ export async function instagramRoutes(fastify: FastifyInstance) {
   }, InstagramController.getMessages);
 
   // POST /api/instagram/send-message - Send Instagram message
-  fastify.post<{ Body: SendMessageBody }>('/instagram/send-message', {
+  fastify.post<{ Body: SendMessageBody; Querystring: SendMessageQuery }>('/instagram/send-message', {
     preHandler: authMiddleware
   }, InstagramController.sendMessage);
 }
