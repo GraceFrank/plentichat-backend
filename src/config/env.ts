@@ -8,6 +8,7 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
   PORT: z.string().transform(Number),
   HOST: z.string().default('0.0.0.0'),
+  CORS_ALLOWED_ORIGINS: z.string().default('https://plentichat.com,https://www.plentichat.com,https://app.plentichat.com'),
 
   // Supabase
   SUPABASE_URL: z.string().url(),

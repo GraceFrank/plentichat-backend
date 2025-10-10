@@ -27,7 +27,7 @@ async function registerPlugins() {
   // CORS
   await fastify.register(cors, {
     origin: env.NODE_ENV === 'production'
-      ? ['https://plentichat.com', 'https://www.plentichat.com']
+      ? env.CORS_ALLOWED_ORIGINS.split(',')
       : true,
     credentials: true,
   });
