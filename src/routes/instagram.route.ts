@@ -1,5 +1,5 @@
 import { FastifyInstance } from 'fastify';
-import { InstagramController } from '@/controllers/instagramController';
+import { InstagramController } from '@/controllers/instagram.controller';
 import { authMiddleware } from '@/middleware/auth';
 
 interface GetConversationsQuery {

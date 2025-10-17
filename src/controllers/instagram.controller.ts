@@ -1,50 +1,13 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { InstagramMessagingService } from '@/services/instagram';
+import InstagramService from '@/services/instagram.service';
 import { SocialAccount } from '@/models/SocialAccount';
 import { logger } from '@/config/logger';
-import axios from 'axios';
-
-interface ConversationMessage {
-  id: string;
-  from: {
-    id: string;
-    username: string;
-  };
-  to: {
-    id: string;
-    username: string;
-  };
-  message: string;
-  created_time: string;
-  is_from_me: boolean;
-}
-
-interface Conversation {
-  id: string;
-  participant: {
-    id: string;
-    username: string;
-    name?: string;
-    profile_picture_url?: string;
-  };
-  messages: ConversationMessage[];
-  updated_time: string;
-  unread_count?: number;
-}
-
-interface GetConversationsQuery {
-  social_account_id?: string;
-}
-
-interface SendMessageBody {
-  recipientId: string;
-  message: string;
-}
-
-interface GetMessagesQuery {
-  conversationId: string;
-  social_account_id?: string;
-}
+import type {
+  Conversation,
+  GetConversationsQuery,
+  SendMessageBody,
+  GetMessagesQuery,
+} from '@/types/instagram';
 
 export class InstagramController {
   /**
@@ -89,23 +52,11 @@ export class InstagramController {
           return reply.send({ success: true, data: [] });
         }
 
-        // Fetch conversations from Instagram API (without messages)
-        const conversationsResponse = await axios.get(
-          `https://graph.instagram.com/v23.0/me/conversations`,
-          {
-            params: {
-              platform: "instagram",
-              access_token: accessToken,
-              fields: 'id,participants,updated_time',
-            },
-          }
-        );
-
-        console.log("\n\n\n\n\n\nCONVERSATION response:\n", JSON.stringify(conversationsResponse.data, null, 2));
-        console.log("\nInstagram API status:", conversationsResponse.status + "\n\n\n\n\n");
+        // Fetch conversations from Instagram API
+        const conversationsResponse = await InstagramService.getConversations(accessToken);
 
 
-        const conversations = conversationsResponse.data.data || [];
+        const conversations = conversationsResponse.data || [];
 
         // Transform conversations
         for (const conv of conversations) {
@@ -114,48 +65,22 @@ export class InstagramController {
             (p: { id: string }) => p.id !== igUserId
           );
 
-          console.log('participant', JSON.stringify(participant, null, 2));
 
           if (!participant) continue;
 
-          // Fetch participant details
-          let participantDetails = {
-            id: participant.id,
-            username: participant.username || 'Unknown',
-            name: undefined,
-            profile_picture_url: undefined,
-          };
+          // Fetch participant details using service
+          const participantDetails = await InstagramService.getIgUserProfile(
+            participant.id,
+            accessToken
+          );
 
-          try {
-            const userResponse = await axios.get(
-              `https://graph.instagram.com/v23.0/${participant.id}`,
-              {
-                params: {
-                  access_token: accessToken,
-                  fields: 'id,username,name,profile_pic',
-                },
-              }
-            );
-            participantDetails = {
-              ...participantDetails,
-              username: userResponse.data.username || participantDetails.username,
-              name: userResponse.data.name,
-              profile_picture_url: userResponse.data.profile_pic,
-            };
-          } catch (err: any) {
-            logger.warn({
-              err: err.response?.data || err.message,
-              participantId: participant.id
-            }, 'Failed to fetch participant details');
-          }
+          // Format and add conversation
+          const formattedConversation = InstagramService.formatConversation(
+            conv,
+            participantDetails
+          );
 
-          allConversations.push({
-            id: conv.id,
-            participant: participantDetails,
-            messages: [], // Messages will be fetched separately
-            updated_time: conv.updated_time,
-            unread_count: 0,
-          });
+          allConversations.push(formattedConversation);
         }
       } catch (err) {
         logger.error({ err, accountId: socialAccount.id }, 'Error fetching conversations for account');
@@ -221,42 +146,14 @@ export class InstagramController {
         });
       }
 
-      // Fetch messages for the specific conversation
-      const messagesResponse = await axios.get(
-        `https://graph.instagram.com/v23.0/${conversationId}`,
-        {
-          params: {
-            access_token: accessToken,
-            fields: 'messages{id,from,to,message,created_time}',
-          },
-        }
+      // Fetch messages for the specific conversation using service
+      const messagesData = await InstagramService.getConversationMessages(
+        conversationId,
+        accessToken
       );
 
-      const messages: ConversationMessage[] = (messagesResponse.data.messages?.data || []).map(
-        (msg: {
-          id: string;
-          from: { id: string; username?: string };
-          to: { id: string; username?: string };
-          message: string;
-          created_time: string;
-        }) => ({
-          id: msg.id,
-          from: {
-            id: msg.from.id,
-            username: msg.from.username || 'Unknown',
-          },
-          to: {
-            id: msg.to.id,
-            username: msg.to.username || 'Unknown',
-          },
-          message: msg.message,
-          created_time: msg.created_time,
-          is_from_me: msg.from.id === igUserId,
-        })
-      );
-
-      // Sort messages by created_time ascending (oldest first)
-      messages.sort((a, b) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime());
+      // Format messages using service
+      const messages = InstagramService.formatMessages(messagesData, igUserId);
 
       return reply.send({
         success: true,
@@ -313,7 +210,7 @@ export class InstagramController {
       }
 
       // Send message using Instagram API
-      const result = await InstagramMessagingService.sendTextMessage({
+      const result = await InstagramService.sendTextMessage({
         igId: igUserId,
         recipientId,
         accessToken,
