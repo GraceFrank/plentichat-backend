@@ -9,7 +9,8 @@
     "build": "tsc && tsc-alias",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
-    "test": "jest"
+    "test": "vitest",
+    "test:webhook": "tsx test-webhook.ts"
   },
   "keywords": [
     "fastify",

@@ -167,6 +167,7 @@ export default class InstagramService {
 
   /**
    * Get recent messages from a conversation with a specific user
+   * Optimized to fetch conversation and messages in a single API call
    */
   static async getRecentMessagesWithUser(
     igId: string,
@@ -175,13 +176,28 @@ export default class InstagramService {
     limit: number = 10
   ): Promise<InstagramMessage[]> {
     try {
-      const conversationId = await this.findConversationWithUser(igId, userId, accessToken);
+      // Use nested fields to get conversations with messages in one API call
+      const conversationsResponse = await axios.get<ConversationsResponse>(
+        `${this.baseUrl}/${igId}/conversations`,
+        {
+          params: {
+            platform: 'instagram',
+            access_token: accessToken,
+            fields: `id,participants,messages.limit(${limit}){id,from,to,message,created_time}`,
+          },
+        }
+      );
 
-      if (!conversationId) {
+      // Find conversation that includes the specific user
+      const conversation = conversationsResponse.data.data.find((conv) =>
+        conv.participants?.data.some((p) => p.id === userId)
+      );
+
+      if (!conversation || !conversation.messages?.data) {
         return [];
       }
 
-      return await this.getConversationMessages(conversationId, accessToken, limit);
+      return conversation.messages.data;
     } catch (error) {
       this.handleError(error, 'Get Recent Messages');
     }

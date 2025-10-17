@@ -1,5 +1,6 @@
 import { FastifyInstance } from 'fastify';
 import { getSupabaseServiceClient } from '@/lib/supabase';
+import { generateMetaWebhookSignature } from '@/utils/signature.util';
 
 export async function healthRoutes(fastify: FastifyInstance) {
   fastify.get('/health', async (_request, reply) => {
@@ -15,6 +16,10 @@ export async function healthRoutes(fastify: FastifyInstance) {
       // Check Supabase connection - use service client for health check
       const supabase = getSupabaseServiceClient();
       const { error } = await supabase.from('assistants').select('count').limit(1);
+
+      generateMetaWebhookSignature({
+
+      })
 
       if (error) {
         throw error;

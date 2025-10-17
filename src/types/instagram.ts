@@ -43,6 +43,9 @@ export interface InstagramConversation {
     data: InstagramParticipant[];
   };
   updated_time: string;
+  messages?: {
+    data: InstagramMessage[];
+  };
 }
 
 export interface InstagramMessage {
