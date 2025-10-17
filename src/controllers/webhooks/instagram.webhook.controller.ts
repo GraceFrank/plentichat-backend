@@ -2,7 +2,7 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import { Messaging, WebhookPayload } from '@/types/webhook';
 import { getSupabaseServiceClient } from '@/lib/supabase';
 import { buildRagGraph } from '@/services/agent/ragFactory';
-import { HumanMessage } from '@langchain/core/messages';
+import { HumanMessage, BaseMessage } from '@langchain/core/messages';
 import InstagramService from '@/services/instagram.service';
 import { SocialAccount } from '@/models/SocialAccount';
 import { Assistant } from '@/models/Assistant';
@@ -58,12 +58,39 @@ export class InstagramWebhookController {
 
     logger.info(`Using assistant: ${assistant.name} (${assistant.id})`);
 
-    // Build and invoke AI agent
+    // Fetch recent conversation history for context
+    const decryptedToken = await socialAccount.getAccessToken();
+    let conversationHistory: BaseMessage[] = [];
+
+    try {
+      const recentMessages = await InstagramService.getRecentMessagesWithUser(
+        recipientId,
+        senderId,
+        decryptedToken,
+        10 // Fetch last 10 messages for context
+      );
+
+      // Convert Instagram messages to LangChain format
+      if (recentMessages.length > 0) {
+        conversationHistory = InstagramService.convertInstagramMessagesToLangChainFormat(
+          recentMessages,
+          recipientId
+        );
+        logger.info(`Fetched ${conversationHistory.length} messages for context`);
+      }
+    } catch (error) {
+      logger.warn({ err: error }, 'Failed to fetch conversation history, proceeding without context');
+    }
+
+    // Build and invoke AI agent with conversation history
     const assistantData = assistant.toJSON();
     const graph = buildRagGraph(assistantData, supabase);
 
+    // Combine conversation history with the new message
+    const allMessages = [...conversationHistory, new HumanMessage(messageText)];
+
     const result = await graph.invoke({
-      messages: [new HumanMessage(messageText)],
+      messages: allMessages,
       assistant: assistantData,
       userId: assistant.userId,
     });
@@ -79,9 +106,7 @@ export class InstagramWebhookController {
 
     logger.info(`Agent response: "${agentResponse}"`);
 
-    // Decrypt token and send response
-    const decryptedToken = await socialAccount.getAccessToken()
-
+    // Send response using the already decrypted token
     await InstagramService.sendTextMessage({
       igId: recipientId,
       recipientId: senderId,

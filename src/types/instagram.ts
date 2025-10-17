@@ -14,8 +14,8 @@ export interface ConversationMessage {
   is_from_me: boolean;
 }
 
-// Participant/User types
-export interface ParticipantDetails {
+// Instagram User Profile types
+export interface IgUserProfile {
   id: string;
   username: string;
   name?: string;
@@ -25,7 +25,7 @@ export interface ParticipantDetails {
 // Conversation types
 export interface Conversation {
   id: string;
-  participant: ParticipantDetails;
+  participant: IgUserProfile;
   messages: ConversationMessage[];
   updated_time: string;
   unread_count?: number;
@@ -57,6 +57,38 @@ export interface InstagramMessage {
   };
   message: string;
   created_time: string;
+}
+
+// Message attachment types
+export interface MessageAttachment {
+  type: 'image' | 'audio' | 'video' | 'like_heart' | 'MEDIA_SHARE';
+  payload: {
+    url?: string;
+    id?: string;
+  };
+}
+
+export interface Message {
+  text?: string;
+  attachment?: MessageAttachment;
+}
+
+export interface SendMessageParams {
+  igId: string;
+  recipientId: string;
+  accessToken: string;
+  message: Message;
+}
+
+export interface ConversationsResponse {
+  data: InstagramConversation[];
+  paging?: {
+    cursors?: {
+      before: string;
+      after: string;
+    };
+    next?: string;
+  };
 }
 
 // Request/Response types for controller

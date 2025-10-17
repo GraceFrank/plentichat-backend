@@ -1,43 +1,16 @@
 import axios from 'axios';
 import { env } from '@/config/env';
+import { HumanMessage, AIMessage, BaseMessage } from '@langchain/core/messages';
 import type {
   ConversationMessage,
-  ParticipantDetails,
+  IgUserProfile,
   Conversation,
   InstagramMessage,
   InstagramConversation,
+  Message,
+  SendMessageParams,
+  ConversationsResponse,
 } from '@/types/instagram';
-
-interface MessageAttachment {
-  type: 'image' | 'audio' | 'video' | 'like_heart' | 'MEDIA_SHARE';
-  payload: {
-    url?: string;
-    id?: string;
-  };
-}
-
-interface Message {
-  text?: string;
-  attachment?: MessageAttachment;
-}
-
-interface SendMessageParams {
-  igId: string;
-  recipientId: string;
-  accessToken: string;
-  message: Message;
-}
-
-interface ConversationsResponse {
-  data: InstagramConversation[];
-  paging?: {
-    cursors?: {
-      before: string;
-      after: string;
-    };
-    next?: string;
-  };
-}
 
 export default class InstagramService {
   private static readonly baseUrl = env.INSTAGRAM_API_BASE_URL;
@@ -112,7 +85,7 @@ export default class InstagramService {
   static async getIgUserProfile(
     userId: string,
     accessToken: string
-  ): Promise<ParticipantDetails> {
+  ): Promise<IgUserProfile> {
     try {
       const userResponse = await axios.get(
         `${this.baseUrl}/${userId}`,
@@ -141,7 +114,8 @@ export default class InstagramService {
 
   static async getConversationMessages(
     conversationId: string,
-    accessToken: string
+    accessToken: string,
+    limit: number = 10
   ): Promise<InstagramMessage[]> {
     try {
       const messagesResponse = await axios.get(
@@ -149,7 +123,7 @@ export default class InstagramService {
         {
           params: {
             access_token: accessToken,
-            fields: 'messages{id,from,to,message,created_time}',
+            fields: `messages.limit(${limit}){id,from,to,message,created_time}`,
           },
         }
       );
@@ -160,9 +134,82 @@ export default class InstagramService {
     }
   }
 
+  /**
+   * Find conversation between the Instagram account and a specific user
+   */
+  static async findConversationWithUser(
+    igId: string,
+    userId: string,
+    accessToken: string
+  ): Promise<string | null> {
+    try {
+      const conversationsResponse = await axios.get<ConversationsResponse>(
+        `${this.baseUrl}/${igId}/conversations`,
+        {
+          params: {
+            platform: 'instagram',
+            access_token: accessToken,
+            fields: 'id,participants',
+          },
+        }
+      );
+
+      // Find conversation that includes the specific user
+      const conversation = conversationsResponse.data.data.find((conv) =>
+        conv.participants?.data.some((p) => p.id === userId)
+      );
+
+      return conversation?.id || null;
+    } catch (error) {
+      this.handleError(error, 'Find Conversation');
+    }
+  }
+
+  /**
+   * Get recent messages from a conversation with a specific user
+   */
+  static async getRecentMessagesWithUser(
+    igId: string,
+    userId: string,
+    accessToken: string,
+    limit: number = 10
+  ): Promise<InstagramMessage[]> {
+    try {
+      const conversationId = await this.findConversationWithUser(igId, userId, accessToken);
+
+      if (!conversationId) {
+        return [];
+      }
+
+      return await this.getConversationMessages(conversationId, accessToken, limit);
+    } catch (error) {
+      this.handleError(error, 'Get Recent Messages');
+    }
+  }
+
+  /**
+   * Convert Instagram messages to LangChain BaseMessage format for AI context
+   * Maps Instagram messages to HumanMessage (from user) or AIMessage (from bot)
+   */
+  static convertInstagramMessagesToLangChainFormat(
+    messages: InstagramMessage[],
+    igAccountId: string
+  ): BaseMessage[] {
+    return messages.map((msg) => {
+      const isFromBot = msg.from.id === igAccountId;
+      const content = msg.message || '';
+
+      if (isFromBot) {
+        return new AIMessage(content);
+      } else {
+        return new HumanMessage(content);
+      }
+    });
+  }
+
   static formatConversation(
     conversation: InstagramConversation,
-    participantDetails: ParticipantDetails
+    participantDetails: IgUserProfile
   ): Conversation {
     return {
       id: conversation.id,
