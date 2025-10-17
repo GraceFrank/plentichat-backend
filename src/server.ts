@@ -5,10 +5,7 @@ import rateLimit from '@fastify/rate-limit';
 import { env } from '@/config/env';
 import { logger, fastifyLoggerConfig } from '@/config/logger';
 import { errorHandler } from '@/middleware/errorHandler';
-import { webhookRoutes } from '@/routes/webhooks';
-import { chatRoutes } from '@/routes/chat';
-import { healthRoutes } from '@/routes/health';
-import { instagramRoutes } from '@/routes/instagram.route';
+import { registerRoutes } from '@/routes';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
@@ -40,13 +37,6 @@ async function registerPlugins() {
   });
 }
 
-// Register routes
-async function registerRoutes() {
-  await fastify.register(healthRoutes);
-  await fastify.register(webhookRoutes, { prefix: '/api' });
-  await fastify.register(chatRoutes, { prefix: '/api' });
-  await fastify.register(instagramRoutes, { prefix: '/api' });
-}
 
 // Error handler
 fastify.setErrorHandler(errorHandler);
@@ -72,7 +62,7 @@ fastify.addContentTypeParser(
 async function start() {
   try {
     await registerPlugins();
-    await registerRoutes();
+    await registerRoutes(fastify);
 
     await fastify.listen({
       port: env.PORT,

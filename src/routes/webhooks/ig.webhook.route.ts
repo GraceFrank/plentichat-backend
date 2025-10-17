@@ -4,11 +4,14 @@ import { Messaging, WebhookPayload } from '@/types/webhook';
 import { getSupabaseServiceClient } from '@/lib/supabase';
 import { buildRagGraph } from '@/services/agent/ragFactory';
 import { HumanMessage } from '@langchain/core/messages';
-import { InstagramMessagingService } from '@/services/instagram';
+import InstagramService from '@/services/instagram.service';
 import { decryptToken } from '@/lib/crypto';
 import { env } from '@/config/env';
 import { logger } from '@/config/logger';
 
+/**
+ * Verify Instagram webhook signature
+ */
 function verifyWebhookSignature(
   rawBody: Buffer,
   signature: string,
@@ -27,6 +30,9 @@ function verifyWebhookSignature(
   );
 }
 
+/**
+ * Process incoming Instagram message
+ */
 async function processMessage(messaging: Messaging) {
   const senderId = messaging.sender.id;
   const recipientId = messaging.recipient.id;
@@ -89,7 +95,7 @@ async function processMessage(messaging: Messaging) {
 
   const decryptedToken = await decryptToken(socialAccount.access_token as string);
 
-  await InstagramMessagingService.sendTextMessage({
+  await InstagramService.sendTextMessage({
     igId: recipientId,
     recipientId: senderId,
     accessToken: decryptedToken,
@@ -100,7 +106,10 @@ async function processMessage(messaging: Messaging) {
   logger.info(`Successfully sent response to ${senderId}`);
 }
 
-export async function webhookRoutes(fastify: FastifyInstance) {
+/**
+ * Register Instagram webhook routes
+ */
+export async function instagramWebhookRoutes(fastify: FastifyInstance) {
   // DEBUG ENDPOINT - Remove in production
   if (env.NODE_ENV !== 'production') {
     fastify.post('/webhooks/instagram/debug', async (request: FastifyRequest, reply: FastifyReply) => {
