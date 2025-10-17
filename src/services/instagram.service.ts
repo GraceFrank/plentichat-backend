@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { env } from '@/config/env';
 import type {
   ConversationMessage,
   ParticipantDetails,
@@ -39,7 +40,7 @@ interface ConversationsResponse {
 }
 
 export default class InstagramService {
-  private static readonly baseUrl = 'https://graph.instagram.com/v23.0';
+  private static readonly baseUrl = env.INSTAGRAM_API_BASE_URL;
 
   private static handleError(error: unknown, context: string): never {
     if (axios.isAxiosError(error)) {

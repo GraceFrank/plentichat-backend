@@ -18,6 +18,7 @@ const envSchema = z.object({
   // Instagram/Meta
   INSTAGRAM_APP_SECRET: z.string(),
   META_VERIFY_TOKEN: z.string(),
+  INSTAGRAM_API_BASE_URL: z.string().default('https://graph.instagram.com/v23.0'),
 
   // Google Cloud KMS
   GOOGLE_PROJECT_ID: z.string(),
