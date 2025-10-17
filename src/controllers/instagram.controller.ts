@@ -40,7 +40,6 @@ export class InstagramController {
         const accessToken = await socialAccount.getAccessToken();
         const igUserId = socialAccount.platformUserId;
 
-        console.log(socialAccount)
 
         if (!igUserId) {
           logger.warn({ accountId: socialAccount.id }, 'Account missing platform_user_id');
