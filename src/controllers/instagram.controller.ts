@@ -2,12 +2,13 @@ import { FastifyRequest, FastifyReply } from 'fastify';
 import InstagramService from '@/services/instagram.service';
 import { SocialAccount } from '@/models/SocialAccount';
 import { logger } from '@/config/logger';
+import type { Conversation } from '@/types/instagram';
 import type {
-  Conversation,
   GetConversationsQuery,
-  SendMessageBody,
   GetMessagesQuery,
-} from '@/types/instagram';
+  SendMessageBody,
+  SendMessageQuery,
+} from '@/validations/instagram.validation';
 
 export class InstagramController {
   /**
@@ -21,12 +22,6 @@ export class InstagramController {
       const supabase = request.supabase!;
       const accountId = request.query.social_account_id;
 
-      if (!accountId) {
-        return reply.send({
-          success: true,
-          data: [],
-        });
-      }
 
 
       // Get user's Instagram accounts using the model (don't filter by is_active)
@@ -114,16 +109,8 @@ export class InstagramController {
   ) {
     try {
       const accountId = request.query.social_account_id;
-      if (!accountId) return []
       const supabase = request.supabase!;
       const { conversationId } = request.query;
-
-      if (!conversationId) {
-        return reply.status(400).send({
-          success: false,
-          error: 'conversationId is required',
-        });
-      }
 
       // Get user's Instagram accounts
       const socialAccount = await SocialAccount.findById(supabase, accountId);
@@ -172,12 +159,11 @@ export class InstagramController {
    * Send a message to an Instagram user
    */
   static async sendMessage(
-    request: FastifyRequest<{ Body: SendMessageBody; Querystring: { social_account_id?: string } }>,
+    request: FastifyRequest<{ Body: SendMessageBody; Querystring: SendMessageQuery }>,
     reply: FastifyReply
   ) {
     try {
       const accountId = request.query.social_account_id;
-      if (!accountId) return []
       const supabase = request.supabase!;
       const { recipientId, message } = request.body;
 

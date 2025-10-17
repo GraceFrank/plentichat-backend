@@ -2,16 +2,16 @@ import { z } from 'zod';
 
 // Query validation schemas
 export const getConversationsQuerySchema = z.object({
-  social_account_id: z.string().uuid().optional(),
+  social_account_id: z.string().uuid(),
 });
 
 export const getMessagesQuerySchema = z.object({
   conversationId: z.string().min(1, 'Conversation ID is required'),
-  social_account_id: z.string().uuid().optional(),
+  social_account_id: z.string().uuid(),
 });
 
 export const sendMessageQuerySchema = z.object({
-  social_account_id: z.string().uuid().optional(),
+  social_account_id: z.string().uuid(),
 });
 
 // Body validation schemas
