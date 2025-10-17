@@ -1,5 +1,5 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { decryptToken } from '@/lib/crypto';
+import { decryptToken } from '@/services/googleKms.service';
 import { logger } from '@/config/logger';
 
 export interface SocialAccountData {
