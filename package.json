@@ -9,8 +9,10 @@
     "build": "tsc && tsc-alias",
     "start": "node dist/server.js",
     "lint": "eslint src --ext .ts",
+    "type-check": "tsc --noEmit",
     "test": "vitest",
-    "test:webhook": "tsx test-webhook.ts"
+    "test:webhook": "tsx test-webhook.ts",
+    "generate:signature": "tsx scripts/generate-signature.ts"
   },
   "keywords": [
     "fastify",

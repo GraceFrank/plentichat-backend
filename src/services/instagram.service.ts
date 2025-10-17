@@ -128,48 +128,20 @@ export default class InstagramService {
         }
       );
 
+
       return messagesResponse.data.messages?.data || [];
     } catch (error) {
       this.handleError(error, 'Get Conversation Messages');
     }
   }
 
-  /**
-   * Find conversation between the Instagram account and a specific user
-   */
-  static async findConversationWithUser(
-    igId: string,
-    userId: string,
-    accessToken: string
-  ): Promise<string | null> {
-    try {
-      const conversationsResponse = await axios.get<ConversationsResponse>(
-        `${this.baseUrl}/${igId}/conversations`,
-        {
-          params: {
-            platform: 'instagram',
-            access_token: accessToken,
-            fields: 'id,participants',
-          },
-        }
-      );
 
-      // Find conversation that includes the specific user
-      const conversation = conversationsResponse.data.data.find((conv) =>
-        conv.participants?.data.some((p) => p.id === userId)
-      );
-
-      return conversation?.id || null;
-    } catch (error) {
-      this.handleError(error, 'Find Conversation');
-    }
-  }
 
   /**
    * Get recent messages from a conversation with a specific user
    * Optimized to fetch conversation and messages in a single API call
    */
-  static async getRecentMessagesWithUser(
+  static async getConversationAndMessagesWithIgUserId(
     igId: string,
     userId: string,
     accessToken: string,
@@ -241,20 +213,25 @@ export default class InstagramService {
     igUserId: string
   ): ConversationMessage[] {
     return messages
-      .map((msg) => ({
-        id: msg.id,
-        from: {
-          id: msg.from.id,
-          username: msg.from.username || 'Unknown',
-        },
-        to: {
-          id: msg.to.id,
-          username: msg.to.username || 'Unknown',
-        },
-        message: msg.message,
-        created_time: msg.created_time,
-        is_from_me: msg.from.id === igUserId,
-      }))
+      .map((msg) => {
+        // 'to' is an array of participants, get the first one
+        const toParticipant = msg.to.data[0];
+
+        return {
+          id: msg.id,
+          from: {
+            id: msg.from.id,
+            username: msg.from.username || 'Unknown',
+          },
+          to: {
+            id: toParticipant?.id || 'Unknown',
+            username: toParticipant?.username || 'Unknown',
+          },
+          message: msg.message,
+          created_time: msg.created_time,
+          is_from_me: msg.from.id === igUserId,
+        };
+      })
       .sort((a, b) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime());
   }
 }

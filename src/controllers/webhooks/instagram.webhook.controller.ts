@@ -37,6 +37,8 @@ export class InstagramWebhookController {
       'instagram'
     );
 
+    console.info(socialAccount)
+
     if (!socialAccount) {
       logger.warn(`No social account found for Instagram account ${recipientId}`);
       return;
@@ -69,6 +71,8 @@ export class InstagramWebhookController {
         decryptedToken,
         10 // Fetch last 10 messages for context
       );
+
+      console.log("messages", recentMessages)
 
       // Convert Instagram messages to LangChain format
       if (recentMessages.length > 0) {
@@ -184,7 +188,7 @@ export class InstagramWebhookController {
       for (const entry of payload.entry) {
         for (const messaging of entry.messaging) {
           try {
-            await this.routeMessagingEvent(messaging);
+            await InstagramWebhookController.routeMessagingEvent(messaging);
           } catch (error) {
             logger.error({ err: error, messaging }, 'Error routing webhook event');
           }

@@ -1,6 +1,7 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
 import { verifySignature } from '@/utils/signature.util';
 import { logger } from '@/config/logger';
+import { env } from '@/config/env';
 
 /**
  * Verify Meta (Instagram/Facebook/WhatsApp) webhook signature
@@ -8,6 +9,12 @@ import { logger } from '@/config/logger';
  */
 export function verifyMetaSignature(appSecret: string) {
   return async (request: FastifyRequest, reply: FastifyReply) => {
+    // Bypass signature verification in development mode
+    if (env.NODE_ENV === 'development') {
+      logger.info('⚠️  Skipping signature verification (development mode)');
+      return;
+    }
+
     const signature = request.headers['x-hub-signature-256'] as string;
 
     if (!signature) {
@@ -25,7 +32,11 @@ export function verifyMetaSignature(appSecret: string) {
     const isValid = verifySignature(rawBody, signature, appSecret);
 
     if (!isValid) {
-      logger.warn('Invalid webhook signature');
+      logger.warn({
+        receivedSignature: signature,
+        rawBodyPreview: rawBody.toString().substring(0, 200),
+        rawBodyLength: rawBody.length
+      }, 'Invalid webhook signature - Debug info');
       return reply.status(401).send({ error: 'Invalid signature' });
     }
 

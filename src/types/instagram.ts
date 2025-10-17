@@ -32,7 +32,7 @@ export interface Conversation {
 }
 
 // Instagram API raw response types
-export interface InstagramParticipant {
+export interface IgConversationParticipant {
   id: string;
   username?: string;
 }
@@ -40,7 +40,7 @@ export interface InstagramParticipant {
 export interface InstagramConversation {
   id: string;
   participants?: {
-    data: InstagramParticipant[];
+    data: IgConversationParticipant[];
   };
   updated_time: string;
   messages?: {
@@ -48,16 +48,13 @@ export interface InstagramConversation {
   };
 }
 
+
+
+
 export interface InstagramMessage {
   id: string;
-  from: {
-    id: string;
-    username?: string;
-  };
-  to: {
-    id: string;
-    username?: string;
-  };
+  from: IgConversationParticipant;
+  to: { data: Array<IgConversationParticipant> }
   message: string;
   created_time: string;
 }
