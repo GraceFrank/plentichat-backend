@@ -5,18 +5,19 @@ import { buildRagGraph } from '@/services/agent/ragFactory';
 import { HumanMessage } from '@langchain/core/messages';
 import InstagramService from '@/services/instagram.service';
 import { SocialAccount } from '@/models/SocialAccount';
-import { decryptToken } from '@/services/googleKms.service';
+import { Assistant } from '@/models/Assistant';
 import { env } from '@/config/env';
 import { logger } from '@/config/logger';
 
 export class InstagramWebhookController {
   /**
-   * Process incoming Instagram message
+   * Handle incoming message event
    */
-  private static async processMessage(messaging: Messaging): Promise<void> {
+  private static async handleMessageEvent(messaging: Messaging): Promise<void> {
     const senderId = messaging.sender.id;
     const recipientId = messaging.recipient.id;
     const message = messaging.message;
+
 
     if (!message?.text) {
       logger.debug('Skipping non-text message');
@@ -47,14 +48,10 @@ export class InstagramWebhookController {
       return;
     }
 
-    // Fetch assistant details
-    const { data: assistant, error: assistantError } = await supabase
-      .from('assistants')
-      .select('*')
-      .eq('id', socialAccount.assistantId)
-      .single();
+    // Fetch assistant details using the model
+    const assistant = await Assistant.findById(supabase, socialAccount.assistantId);
 
-    if (assistantError || !assistant) {
+    if (!assistant) {
       logger.warn(`Assistant not found for account ${recipientId}`);
       return;
     }
@@ -62,12 +59,13 @@ export class InstagramWebhookController {
     logger.info(`Using assistant: ${assistant.name} (${assistant.id})`);
 
     // Build and invoke AI agent
-    const graph = buildRagGraph(assistant, supabase);
+    const assistantData = assistant.toJSON();
+    const graph = buildRagGraph(assistantData, supabase);
 
     const result = await graph.invoke({
       messages: [new HumanMessage(messageText)],
-      assistant: assistant,
-      userId: assistant.user_id,
+      assistant: assistantData,
+      userId: assistant.userId,
     });
 
     const lastMessage = result.messages[result.messages.length - 1];
@@ -77,12 +75,12 @@ export class InstagramWebhookController {
         : JSON.stringify(lastMessage.content);
 
     // Add AI disclosure to the message
-    const messageWithDisclosure = `${agentResponse}\n\n*Sent by AI`;
+    const messageWithDisclosure = `${agentResponse}`;
 
     logger.info(`Agent response: "${agentResponse}"`);
 
     // Decrypt token and send response
-    const decryptedToken = await decryptToken(socialAccount.accessToken as string);
+    const decryptedToken = await socialAccount.getAccessToken()
 
     await InstagramService.sendTextMessage({
       igId: recipientId,
@@ -93,6 +91,19 @@ export class InstagramWebhookController {
     });
 
     logger.info(`Successfully sent response to ${senderId}`);
+  }
+
+  /**
+   * Route messaging event to appropriate handler
+   */
+  private static async routeMessagingEvent(messaging: Messaging): Promise<void> {
+    // Check which event type is present in the messaging object
+    if (messaging.message) {
+      await this.handleMessageEvent(messaging);
+    } else {
+      // Fallback for unsupported event types
+      logger.debug({ messaging }, 'Unsupported webhook event type received');
+    }
   }
 
   /**
@@ -131,6 +142,7 @@ export class InstagramWebhookController {
 
   /**
    * Handle webhook events (POST request)
+   * Routes events to appropriate handlers based on event type
    * Note: Signature verification is handled by middleware
    */
   static async handleWebhookEvent(
@@ -147,9 +159,9 @@ export class InstagramWebhookController {
       for (const entry of payload.entry) {
         for (const messaging of entry.messaging) {
           try {
-            await this.processMessage(messaging);
+            await this.routeMessagingEvent(messaging);
           } catch (error) {
-            logger.error({ err: error, messaging }, 'Error processing message');
+            logger.error({ err: error, messaging }, 'Error routing webhook event');
           }
         }
       }
