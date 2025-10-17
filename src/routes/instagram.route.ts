@@ -1,37 +1,55 @@
 import { FastifyInstance } from 'fastify';
 import { InstagramController } from '@/controllers/instagram.controller';
 import { authMiddleware } from '@/middleware/auth';
-
-interface GetConversationsQuery {
-  // No query params needed - userId comes from auth token
-}
-
-interface GetMessagesQuery {
-  conversationId: string;
-}
-
-interface SendMessageBody {
-  recipientId: string;
-  message: string;
-}
-
-interface SendMessageQuery {
-  social_account_id?: string;
-}
+import { validate } from '@/middleware/validate.middleware';
+import {
+  getConversationsQuerySchema,
+  getMessagesQuerySchema,
+  sendMessageQuerySchema,
+  sendMessageBodySchema,
+  type GetConversationsQuery,
+  type GetMessagesQuery,
+  type SendMessageBody,
+  type SendMessageQuery,
+} from '@/validations/instagram.validation';
 
 export async function instagramRoutes(fastify: FastifyInstance) {
   // GET /api/instagram/conversations - Fetch Instagram conversations
-  fastify.get<{ Querystring: GetConversationsQuery }>('/instagram/conversations', {
-    preHandler: authMiddleware
-  }, InstagramController.getConversations);
+  fastify.get<{ Querystring: GetConversationsQuery }>(
+    '/instagram/conversations',
+    {
+      preHandler: [
+        authMiddleware,
+        validate({ query: getConversationsQuerySchema }),
+      ],
+    },
+    InstagramController.getConversations
+  );
 
   // GET /api/instagram/messages - Fetch messages for a specific conversation
-  fastify.get<{ Querystring: GetMessagesQuery }>('/instagram/messages', {
-    preHandler: authMiddleware
-  }, InstagramController.getMessages);
+  fastify.get<{ Querystring: GetMessagesQuery }>(
+    '/instagram/messages',
+    {
+      preHandler: [
+        authMiddleware,
+        validate({ query: getMessagesQuerySchema }),
+      ],
+    },
+    InstagramController.getMessages
+  );
 
   // POST /api/instagram/send-message - Send Instagram message
-  fastify.post<{ Body: SendMessageBody; Querystring: SendMessageQuery }>('/instagram/send-message', {
-    preHandler: authMiddleware
-  }, InstagramController.sendMessage);
+  fastify.post<{ Body: SendMessageBody; Querystring: SendMessageQuery }>(
+    '/instagram/send-message',
+    {
+      preHandler: [
+        authMiddleware,
+        validate({
+          query: sendMessageQuerySchema,
+          body: sendMessageBodySchema,
+        }),
+      ],
+    },
+    InstagramController.sendMessage
+  );
 }

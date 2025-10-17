@@ -8,7 +8,7 @@ import { errorHandler } from '@/middleware/errorHandler';
 import { webhookRoutes } from '@/routes/webhooks';
 import { chatRoutes } from '@/routes/chat';
 import { healthRoutes } from '@/routes/health';
-import { instagramRoutes } from '@/routes/instagram';
+import { instagramRoutes } from '@/routes/instagram.route';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
