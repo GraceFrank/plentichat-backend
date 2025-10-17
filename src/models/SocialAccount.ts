@@ -98,7 +98,6 @@ export class SocialAccount {
     accountId: string,
     isActive?: boolean
   ): Promise<SocialAccount | null> {
-    console.log('SocialAccount.findById - accountId:', accountId, 'isActive:', isActive);
 
     const query = supabase
       .from('social_accounts')
@@ -111,13 +110,6 @@ export class SocialAccount {
     }
 
     const { data, error } = await query.single();
-
-    console.log('SocialAccount.findById - Result:', {
-      found: !!data,
-      error: error?.message,
-      code: error?.code,
-      isActive: data?.is_active
-    });
 
     if (error || !data) {
       return null;
