@@ -123,7 +123,7 @@ export default class InstagramService {
         {
           params: {
             access_token: accessToken,
-            fields: `messages.limit(${limit}){id,from,to,message,created_time}`,
+            fields: `messages.limit(${limit}){id,from,to,message,created_time,attachments}`,
           },
         }
       );
@@ -139,37 +139,58 @@ export default class InstagramService {
 
   /**
    * Get recent messages from a conversation with a specific user
-   * Optimized to fetch conversation and messages in a single API call
+   * Uses a two-step approach: first get the conversation, then fetch messages with attachments
+   *
+   * @param limit - Number of messages to fetch (default: 25, Instagram API default)
    */
   static async getConversationAndMessagesWithIgUserId(
-    igId: string,
-    userId: string,
+    participantId: string,
     accessToken: string,
-    limit: number = 10
+    limit = 100
   ): Promise<InstagramMessage[]> {
     try {
-      // Use nested fields to get conversations with messages in one API call
+      // Step 1: Get the conversation ID for the specific participant
       const conversationsResponse = await axios.get<ConversationsResponse>(
-        `${this.baseUrl}/${igId}/conversations`,
+        `${this.baseUrl}/me/conversations`,
         {
           params: {
+            user_id: participantId,
             platform: 'instagram',
             access_token: accessToken,
-            fields: `id,participants,messages.limit(${limit}){id,from,to,message,created_time}`,
+            fields: 'id,participants',
           },
         }
       );
 
-      // Find conversation that includes the specific user
-      const conversation = conversationsResponse.data.data.find((conv) =>
-        conv.participants?.data.some((p) => p.id === userId)
-      );
-
-      if (!conversation || !conversation.messages?.data) {
+      const conversation = conversationsResponse?.data?.data[0];
+      if (!conversation) {
+        console.log('No conversation found for participant:', participantId);
         return [];
       }
 
-      return conversation.messages.data;
+      console.log('Found conversation:', conversation.id);
+
+      // Step 2: Fetch messages with attachments using the conversation ID
+      const messagesResponse = await axios.get(
+        `${this.baseUrl}/${conversation.id}/messages`,
+        {
+          params: {
+            fields: 'id,from,to,message,attachments,created_time',
+            limit: limit,
+            access_token: accessToken,
+          },
+        }
+      );
+
+      const messages = (messagesResponse?.data?.data || []).sort(
+        (a: InstagramMessage, b: InstagramMessage) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime()
+      );
+
+
+
+
+
+      return messages;
     } catch (error) {
       this.handleError(error, 'Get Recent Messages');
     }
@@ -230,6 +251,7 @@ export default class InstagramService {
           message: msg.message,
           created_time: msg.created_time,
           is_from_me: msg.from.id === igUserId,
+          attachments: msg.attachments?.data,
         };
       })
       .sort((a, b) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime());

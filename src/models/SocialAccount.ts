@@ -1,6 +1,7 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { decryptToken } from '@/services/googleKms.service';
 import { logger } from '@/config/logger';
+import { Assistant } from '@/types/assistant';
 
 export interface SocialAccountData {
   id: string;
@@ -13,6 +14,7 @@ export interface SocialAccountData {
   token_expires_at: string;
   assistant_id?: string;
   is_active: boolean;
+  assistant?: Assistant
 }
 
 export class SocialAccount {
@@ -53,6 +55,10 @@ export class SocialAccount {
 
   get tokenExpiresAt(): string {
     return this.data.token_expires_at;
+  }
+
+  get assistant(): Assistant | undefined {
+    return this.data.assistant;
   }
 
   /**
@@ -143,15 +149,19 @@ export class SocialAccount {
 
   /**
    * Find a single account by platform user ID
+   * @param includeAssistant - If true, also fetches the associated assistant
    */
   static async findByPlatformUserId(
     supabase: SupabaseClient,
     platformUserId: string,
-    platform: string = 'instagram'
+    platform: string = 'instagram',
+    includeAssistant: boolean = false
   ): Promise<SocialAccount | null> {
+    const selectFields = includeAssistant ? `*, assistant:assistants(*)` : '*';
+
     const { data, error } = await supabase
       .from('social_accounts')
-      .select('*')
+      .select(selectFields)
       .eq('platform_user_id', platformUserId)
       .eq('platform', platform)
       .eq('is_active', true)
@@ -161,7 +171,10 @@ export class SocialAccount {
       return null;
     }
 
-    return new SocialAccount(data as SocialAccountData);
+    const accountData: any = data;
+    const account = new SocialAccount(accountData as SocialAccountData);
+
+    return account;
   }
 
   /**

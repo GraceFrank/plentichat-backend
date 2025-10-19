@@ -12,6 +12,7 @@ export interface ConversationMessage {
   message: string;
   created_time: string;
   is_from_me: boolean;
+  attachments?: MessageAttachment[];
 }
 
 // Instagram User Profile types
@@ -57,10 +58,34 @@ export interface InstagramMessage {
   to: { data: Array<IgConversationParticipant> }
   message: string;
   created_time: string;
+  attachments?: {
+    data: MessageAttachment[];
+  };
 }
 
 // Message attachment types
 export interface MessageAttachment {
+  image_data?: {
+    width: number;
+    height: number;
+    max_width: number;
+    max_height: number;
+    url: string;
+    preview_url: string;
+  };
+  video_data?: {
+    width: number;
+    height: number;
+    url: string;
+    preview_url: string;
+  };
+  name?: string;
+  mime_type?: string;
+  size?: number;
+}
+
+// Legacy attachment type for sending messages
+export interface MessageAttachmentPayload {
   type: 'image' | 'audio' | 'video' | 'like_heart' | 'MEDIA_SHARE';
   payload: {
     url?: string;
@@ -70,7 +95,7 @@ export interface MessageAttachment {
 
 export interface Message {
   text?: string;
-  attachment?: MessageAttachment;
+  attachment?: MessageAttachmentPayload;
 }
 
 export interface SendMessageParams {

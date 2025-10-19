@@ -22,8 +22,6 @@ export class InstagramController {
       const supabase = request.supabase!;
       const accountId = request.query.social_account_id;
 
-
-
       // Get user's Instagram accounts using the model (don't filter by is_active)
       const socialAccount = await SocialAccount.findById(supabase, accountId, undefined);
 
@@ -140,6 +138,8 @@ export class InstagramController {
 
       // Format messages using service
       const messages = InstagramService.formatMessages(messagesData, igUserId);
+
+
 
       return reply.send({
         success: true,

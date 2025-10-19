@@ -6,6 +6,7 @@ import { env } from '@/config/env';
 import { logger, fastifyLoggerConfig } from '@/config/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import { registerRoutes } from '@/routes';
+import { registerBullBoard } from '@/plugins/bullboard.plugin';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
@@ -62,6 +63,7 @@ fastify.addContentTypeParser(
 async function start() {
   try {
     await registerPlugins();
+    await registerBullBoard(fastify); // Register Bull Board dashboard
     await registerRoutes(fastify);
 
     await fastify.listen({

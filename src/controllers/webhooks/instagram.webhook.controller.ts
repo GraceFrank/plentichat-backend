@@ -5,7 +5,6 @@ import { buildRagGraph } from '@/services/agent/ragFactory';
 import { HumanMessage, BaseMessage } from '@langchain/core/messages';
 import InstagramService from '@/services/instagram.service';
 import { SocialAccount } from '@/models/SocialAccount';
-import { Assistant } from '@/models/Assistant';
 import { env } from '@/config/env';
 import { logger } from '@/config/logger';
 
@@ -34,10 +33,10 @@ export class InstagramWebhookController {
     const socialAccount = await SocialAccount.findByPlatformUserId(
       supabase,
       recipientId,
-      'instagram'
+      'instagram',
+      true
     );
 
-    console.info(socialAccount)
 
     if (!socialAccount) {
       logger.warn(`No social account found for Instagram account ${recipientId}`);
@@ -51,7 +50,8 @@ export class InstagramWebhookController {
     }
 
     // Fetch assistant details using the model
-    const assistant = await Assistant.findById(supabase, socialAccount.assistantId);
+    const assistant = socialAccount.assistant
+    console.log("ASSISTANT", assistant, "Assistant")
 
     if (!assistant) {
       logger.warn(`Assistant not found for account ${recipientId}`);
@@ -62,17 +62,18 @@ export class InstagramWebhookController {
 
     // Fetch recent conversation history for context
     const decryptedToken = await socialAccount.getAccessToken();
+
     let conversationHistory: BaseMessage[] = [];
 
     try {
-      const recentMessages = await InstagramService.getRecentMessagesWithUser(
-        recipientId,
+      // Fetch conversation history (last 100 messages for comprehensive context)
+      const recentMessages = await InstagramService.getConversationAndMessagesWithIgUserId(
         senderId,
         decryptedToken,
-        10 // Fetch last 10 messages for context
       );
 
-      console.log("messages", recentMessages)
+      // console.log("Messages", JSON.stringify(recentMessages))
+
 
       // Convert Instagram messages to LangChain format
       if (recentMessages.length > 0) {
@@ -87,16 +88,15 @@ export class InstagramWebhookController {
     }
 
     // Build and invoke AI agent with conversation history
-    const assistantData = assistant.toJSON();
-    const graph = buildRagGraph(assistantData, supabase);
+    const graph = buildRagGraph(assistant, supabase);
 
     // Combine conversation history with the new message
     const allMessages = [...conversationHistory, new HumanMessage(messageText)];
 
     const result = await graph.invoke({
       messages: allMessages,
-      assistant: assistantData,
-      userId: assistant.userId,
+      assistant,
+      userId: assistant.user_id,
     });
 
     const lastMessage = result.messages[result.messages.length - 1];
@@ -106,7 +106,6 @@ export class InstagramWebhookController {
         : JSON.stringify(lastMessage.content);
 
     // Add AI disclosure to the message
-    const messageWithDisclosure = `${agentResponse}`;
 
     logger.info(`Agent response: "${agentResponse}"`);
 
@@ -115,8 +114,8 @@ export class InstagramWebhookController {
       igId: recipientId,
       recipientId: senderId,
       accessToken: decryptedToken,
-      text: messageWithDisclosure,
-      message: { text: messageWithDisclosure },
+      text: agentResponse,
+      message: { text: agentResponse },
     });
 
     logger.info(`Successfully sent response to ${senderId}`);

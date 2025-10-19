@@ -18,7 +18,7 @@ const envSchema = z.object({
   // Instagram/Meta
   INSTAGRAM_APP_SECRET: z.string(),
   META_VERIFY_TOKEN: z.string(),
-  INSTAGRAM_API_BASE_URL: z.string().default('https://graph.instagram.com/v23.0'),
+  INSTAGRAM_API_BASE_URL: z.string().default('https://graph.instagram.com/v24.0'),
 
   // Google Cloud KMS
   GOOGLE_PROJECT_ID: z.string(),
@@ -30,6 +30,13 @@ const envSchema = z.object({
 
   // OpenAI
   OPENAI_API_KEY: z.string(),
+
+  // Redis
+  REDIS_URL: z.string(),
+
+  // Bull Board (Queue Dashboard)
+  BULLBOARD_USER: z.string(),
+  BULLBOARD_PASS: z.string(),
 
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
