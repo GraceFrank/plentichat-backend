@@ -32,10 +32,13 @@ export async function registerBullBoard(fastify: FastifyInstance) {
   });
 
   // Mount Bull Board routes with Basic Auth protection
-  await fastify.register(serverAdapter.registerPlugin(), {
-    prefix: '/admin/queues',
-    preHandler: fastify.basicAuth, // Protect the route with authentication
-  });
+  await fastify.register(
+    async (instance) => {
+      instance.addHook('preHandler', instance.basicAuth);
+      await instance.register(serverAdapter.registerPlugin());
+    },
+    { prefix: '/admin/queues' }
+  );
 
   logger.info('✅ Bull Board dashboard registered at /admin/queues (protected with Basic Auth)');
 }
