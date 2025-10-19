@@ -182,6 +182,8 @@ export class InstagramWebhookController {
 
     logger.info({ entryCount: payload.entry.length }, 'Webhook payload received');
 
+    logger.info(payload)
+
     // Process in background, return 200 immediately
     setImmediate(async () => {
       for (const entry of payload.entry) {
