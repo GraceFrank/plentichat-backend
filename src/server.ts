@@ -1,12 +1,9 @@
 import Fastify, { FastifyRequest } from 'fastify';
-import cors from '@fastify/cors';
-import helmet from '@fastify/helmet';
-import rateLimit from '@fastify/rate-limit';
 import { env } from '@/config/env';
 import { logger, fastifyLoggerConfig } from '@/config/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import { registerRoutes } from '@/routes';
-import { registerBullBoard } from '@/plugins/bullboard.plugin';
+import { registerPlugins } from '@/plugins';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
@@ -14,30 +11,6 @@ const fastify = Fastify({
   trustProxy: true,
   disableRequestLogging: env.NODE_ENV === 'production',
 });
-
-// Register plugins
-async function registerPlugins() {
-  // Security headers
-  await fastify.register(helmet, {
-    contentSecurityPolicy: false,
-  });
-
-  // CORS
-  await fastify.register(cors, {
-    origin: env.NODE_ENV === 'production'
-      ? env.CORS_ALLOWED_ORIGINS.split(',')
-      : true,
-    credentials: true,
-  });
-
-  // Rate limiting
-  await fastify.register(rateLimit, {
-    max: 100,
-    timeWindow: '1 minute',
-    allowList: ['127.0.0.1'],
-  });
-}
-
 
 // Error handler
 fastify.setErrorHandler(errorHandler);
@@ -62,8 +35,7 @@ fastify.addContentTypeParser(
 // Start server
 async function start() {
   try {
-    await registerPlugins();
-    await registerBullBoard(fastify); // Register Bull Board dashboard
+    await registerPlugins(fastify);
     await registerRoutes(fastify);
 
     await fastify.listen({
