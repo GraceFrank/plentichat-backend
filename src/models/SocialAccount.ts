@@ -2,20 +2,9 @@ import { SupabaseClient } from '@supabase/supabase-js';
 import { decryptToken } from '@/services/googleKms.service';
 import { logger } from '@/config/logger';
 import { Assistant } from '@/types/assistant';
+import { SocialAccountData } from '@/types/SocialAccount';
 
-export interface SocialAccountData {
-  id: string;
-  created_at: string;
-  user_id: string;
-  platform: string;
-  platform_account_id: string;
-  platform_user_id?: string;
-  access_token: string;
-  token_expires_at: string;
-  assistant_id?: string;
-  is_active: boolean;
-  assistant?: Assistant
-}
+
 
 export class SocialAccount {
   private data: SocialAccountData;
@@ -59,6 +48,10 @@ export class SocialAccount {
 
   get assistant(): Assistant | undefined {
     return this.data.assistant;
+  }
+
+  get replyTimeoutSeconds(): number {
+    return this.data.reply_timeout_seconds;
   }
 
   /**
