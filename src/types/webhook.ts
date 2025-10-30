@@ -17,6 +17,7 @@ export interface Messaging {
 interface Message {
   mid: string;
   text?: string;
+  is_echo: boolean;
   attachments?: Attachment[];
 }
 
