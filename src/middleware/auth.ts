@@ -1,5 +1,5 @@
 import { FastifyRequest, FastifyReply } from 'fastify';
-import { createSupabaseClient, getSupabaseServiceClient } from '@/lib/supabase';
+import { createSupabaseClient, getSupabaseServiceClient } from '@/config/supabase';
 import { SupabaseClient } from '@supabase/supabase-js';
 
 export async function authMiddleware(
