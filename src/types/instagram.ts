@@ -130,3 +130,9 @@ export interface GetMessagesQuery {
   conversationId: string;
   social_account_id?: string;
 }
+
+
+export interface SendMessageResponse {
+  recipient_id: string;
+  message_id: string;
+}

@@ -4,6 +4,7 @@ import { logger, fastifyLoggerConfig } from '@/config/logger';
 import { errorHandler } from '@/middleware/errorHandler';
 import { registerRoutes } from '@/routes';
 import { registerPlugins } from '@/plugins';
+import messageHandoffWorker from '@/queues/message-handoff/worker';
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,
@@ -56,6 +57,8 @@ signals.forEach((signal) => {
   process.on(signal, async () => {
     logger.info(`Received ${signal}, shutting down gracefully...`);
     await fastify.close();
+    await messageHandoffWorker.close();
+    logger.info('Server and workers shut down successfully');
     process.exit(0);
   });
 });

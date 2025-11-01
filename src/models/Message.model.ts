@@ -34,15 +34,15 @@ export class Message {
     return this.data.sender_id;
   }
 
-  get platform(): MessagePlatform | null {
+  get platform(): MessagePlatform {
     return this.data.platform;
   }
 
-  get recipientId(): string | null {
+  get recipientId(): string {
     return this.data.recipient_id;
   }
 
-  get senderType(): MessageSenderType | null {
+  get senderType(): MessageSenderType {
     return this.data.sender_type;
   }
 
@@ -50,7 +50,7 @@ export class Message {
     return this.data.attachments;
   }
 
-  get repliedByAi(): boolean | null {
+  get repliedByAi(): boolean {
     return this.data.sender_type === "AI";
   }
 
@@ -58,7 +58,7 @@ export class Message {
     return this.data.conversation_id;
   }
 
-  get socialAccountId(): string | null {
+  get socialAccountId(): string {
     return this.data.social_account_id;
   }
 

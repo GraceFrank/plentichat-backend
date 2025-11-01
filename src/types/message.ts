@@ -8,12 +8,12 @@ export interface MessageData {
   text: string | null;
   platform_message_id: string;
   sender_id: string;
-  platform: MessagePlatform | null;
-  recipient_id: string | null;
-  sender_type: MessageSenderType | null;
+  platform: MessagePlatform;
+  recipient_id: string;
+  sender_type: MessageSenderType;
   attachments: Record<string, unknown> | unknown[] | null;
   conversation_id: string | null;
-  social_account_id: string | null;
+  social_account_id: string;
 }
 
 export type MessageInsert = Omit<MessageData, 'id' | 'created_at'>;

@@ -10,6 +10,7 @@ import type {
   Message,
   SendMessageParams,
   ConversationsResponse,
+  SendMessageResponse,
 } from '@/types/instagram';
 
 export default class InstagramService {
@@ -57,7 +58,7 @@ export default class InstagramService {
     recipientId,
     accessToken,
     text,
-  }: SendMessageParams & { text: string }) {
+  }: SendMessageParams & { text: string }): Promise<SendMessageResponse> {
     const message: Message = { text };
     return this.sendMessage({ igId, recipientId, accessToken, message });
   }
@@ -157,12 +158,11 @@ export default class InstagramService {
             user_id: participantId,
             platform: 'instagram',
             access_token: accessToken,
-            fields: 'id,participants',
           },
         }
       );
 
-      const conversation = conversationsResponse?.data?.data[0];
+      const conversation = conversationsResponse?.data?.data?.[0];
       if (!conversation) {
         console.log('No conversation found for participant:', participantId);
         return [];
