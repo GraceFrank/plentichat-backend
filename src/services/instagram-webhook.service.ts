@@ -1,6 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
-import { HumanMessage, BaseMessage } from '@langchain/core/messages';
-import { buildRagGraph } from '@/services/agent/ragFactory';
+import { HumanMessage, BaseMessage } from 'langchain';
+import { buildRagAgent } from '@/services/agent-factory';
 import InstagramService from '@/services/instagram.service';
 import { Message } from '@/models/Message.model';
 import { logger } from '@/config/logger';
@@ -56,15 +56,13 @@ export class MessageHandlerService {
       const supabase = getSupabaseServiceClient()
 
       // Build and invoke AI agent with conversation history
-      const graph = buildRagGraph(assistant, supabase);
+      const agent = buildRagAgent(assistant, supabase);
 
       // Combine conversation history with the new message
       const allMessages = [...conversationHistory, new HumanMessage(messageText)];
 
-      const result = await graph.invoke({
+      const result = await agent.invoke({
         messages: allMessages,
-        assistant,
-        userId: assistant.user_id,
       });
 
       const lastMessage = result.messages[result.messages.length - 1];

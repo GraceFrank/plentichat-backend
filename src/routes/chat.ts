@@ -1,6 +1,6 @@
-import { FastifyInstance, FastifyRequest, FastifyReply } from 'fastify';
-import { buildRagGraph } from '@/services/agent/ragFactory';
-import { HumanMessage } from '@langchain/core/messages';
+import { FastifyInstance, } from 'fastify';
+import { buildRagAgent } from '@/services/agent-factory';
+import { HumanMessage } from 'langchain';
 import { authMiddleware } from '@/middleware/auth';
 import { logger } from '@/config/logger';
 
@@ -37,9 +37,9 @@ export async function chatRoutes(fastify: FastifyInstance) {
     // RLS will ensure user can only access their own assistants
     // No need for manual check since RLS policies handle this
 
-    const graph = buildRagGraph(assistant, supabase);
+    const agent = buildRagAgent(assistant, supabase);
 
-    const result = await graph.invoke({
+    const result = await agent.invoke({
       messages: [new HumanMessage(text)],
     });
 

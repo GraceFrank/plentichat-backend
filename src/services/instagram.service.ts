@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { env } from '@/config/env';
-import { HumanMessage, AIMessage, BaseMessage } from '@langchain/core/messages';
+import { HumanMessage, AIMessage, BaseMessage } from 'langchain';
 import type {
   ConversationMessage,
   IgUserProfile,
@@ -251,7 +251,7 @@ export default class InstagramService {
           message: msg.message,
           created_time: msg.created_time,
           is_from_me: msg.from.id === igUserId,
-          attachments: msg.attachments?.data,
+          ...(msg.attachments?.data && { attachments: msg.attachments.data }),
         };
       })
       .sort((a, b) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime());
