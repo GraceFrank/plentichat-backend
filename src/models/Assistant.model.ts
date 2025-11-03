@@ -1,5 +1,6 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { Assistant as AssistantData } from '@/types/assistant';
+import { EscalationChannel } from './EscalationChannel.model';
 import { logger } from '@/config/logger';
 
 export class Assistant {
@@ -41,8 +42,8 @@ export class Assistant {
     return this.data.llm_model_temperature;
   }
 
-  get replyTimeoutSeconds(): number | null {
-    return this.data.reply_timeout_seconds;
+  get escalationChannelId(): string | null {
+    return this.data.escalation_channel_id;
   }
 
   get isActive(): boolean {
@@ -77,14 +78,28 @@ export class Assistant {
   }
 
   /**
+   * Get the escalation channel for this assistant
+   */
+  async getEscalationChannel(supabase: SupabaseClient): Promise<EscalationChannel | null> {
+    if (!this.data.escalation_channel_id) {
+      return null;
+    }
+
+    return EscalationChannel.findById(supabase, this.data.escalation_channel_id);
+  }
+
+  /**
    * Find an assistant by ID
+   * @param includeEscalationChannel - Whether to include the escalation channel data
    */
   static async findById(
     supabase: SupabaseClient,
     assistantId: string,
-    isActive?: boolean
+    options?: { isActive?: boolean; includeEscalationChannel?: boolean }
   ): Promise<Assistant | null> {
-    const query = supabase
+    const { isActive, includeEscalationChannel = false } = options || {};
+
+    let query = supabase
       .from('assistants')
       .select('*')
       .eq('id', assistantId);
@@ -99,6 +114,17 @@ export class Assistant {
     if (error || !data) {
       logger.debug({ assistantId, error }, 'Assistant not found');
       return null;
+    }
+
+    // Fetch escalation channel if requested
+    if (includeEscalationChannel && data.escalation_channel_id) {
+      const escalationChannel = await EscalationChannel.findById(
+        supabase,
+        data.escalation_channel_id
+      );
+      if (escalationChannel) {
+        (data as any).escalationChannel = escalationChannel.toJSON();
+      }
     }
 
     return new Assistant(data as AssistantData);

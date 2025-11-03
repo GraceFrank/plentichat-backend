@@ -37,7 +37,7 @@ export async function chatRoutes(fastify: FastifyInstance) {
     // RLS will ensure user can only access their own assistants
     // No need for manual check since RLS policies handle this
 
-    const agent = buildRagAgent(assistant, supabase);
+    const agent = buildRagAgent(assistant);
 
     const result = await agent.invoke({
       messages: [new HumanMessage(text)],

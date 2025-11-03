@@ -6,6 +6,8 @@ dotenv.config();
 const envSchema = z.object({
   // Server
   NODE_ENV: z.enum(['development', 'production', 'test']).default('production'),
+  IS_DEVELOPMENT: z.boolean().default(process.env["NODE_ENV"] === "development"),
+
   PORT: z.string().transform(Number),
   HOST: z.string().default('0.0.0.0'),
   CORS_ALLOWED_ORIGINS: z.string().default('https://plentichat.com,https://www.plentichat.com,https://app.plentichat.com'),
@@ -30,6 +32,15 @@ const envSchema = z.object({
 
   // OpenAI
   OPENAI_API_KEY: z.string(),
+
+  // Resend (Email)
+  RESEND_API_KEY: z.string(),
+  RESEND_FROM_EMAIL: z.string().email().default('notification@mail.plentichat.com'),
+
+  // Twilio (SMS)
+  TWILIO_ACCOUNT_SID: z.string(),
+  TWILIO_AUTH_TOKEN: z.string(),
+  TWILIO_PHONE_NUMBER: z.string(),
 
   // Redis
   REDIS_URL: z.string(),

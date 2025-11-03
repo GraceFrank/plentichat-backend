@@ -1,3 +1,5 @@
+import type { EscalationChannelData } from './escalationChannel';
+
 export interface Assistant {
   id: string;
   user_id: string;
@@ -13,4 +15,6 @@ export interface Assistant {
   created_at: string;
   updated_at: string;
   llm_model_temperature: number | null;
+  escalation_channel_id: string | null;
+  escalationChannel?: EscalationChannelData;
 }

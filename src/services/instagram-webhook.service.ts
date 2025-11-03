@@ -1,11 +1,12 @@
 import { SupabaseClient } from '@supabase/supabase-js';
 import { HumanMessage, BaseMessage } from 'langchain';
-import { buildRagAgent } from '@/services/agent-factory';
+import { buildRagAgent, AgentContext } from '@/services/agent-factory';
 import InstagramService from '@/services/instagram.service';
 import { Message } from '@/models/Message.model';
 import { logger } from '@/config/logger';
 import type { Assistant } from '@/types/assistant';
 import type { InstagramMessage } from '@/types/instagram';
+import type { SocialAccountData } from '@/types/SocialAccount';
 import { getSupabaseServiceClient } from '@/config/supabase';
 
 export interface GenerateAIResponseParams {
@@ -13,8 +14,10 @@ export interface GenerateAIResponseParams {
   senderId: string;
   recipientId: string;
   accessToken: string;
-  assistant: Assistant;
-  socialAccountId: string;
+  assistant: Assistant; // Must include escalationChannel property
+  socialAccount: SocialAccountData;
+  conversationId: string;
+  senderUsername?: string;
   recentMessages?: InstagramMessage[];
 }
 
@@ -38,7 +41,9 @@ export class MessageHandlerService {
       recipientId,
       accessToken,
       assistant,
-      socialAccountId,
+      socialAccount,
+      conversationId,
+      senderUsername,
       recentMessages = [],
     } = params;
 
@@ -53,17 +58,55 @@ export class MessageHandlerService {
         logger.info({ historyLength: conversationHistory.length }, 'Converted conversation history');
       }
 
-      const supabase = getSupabaseServiceClient()
+      const supabase = getSupabaseServiceClient();
 
-      // Build and invoke AI agent with conversation history
-      const agent = buildRagAgent(assistant, supabase);
+      // Get escalation channel - either from assistant or user's email
+      let escalationChannel = assistant.escalationChannel;
+
+      if (!escalationChannel) {
+        // Fallback: Use user's email as escalation channel
+        const { data: user } = await supabase.auth.admin.getUserById(assistant.user_id);
+
+        if (user?.user?.email) {
+          escalationChannel = {
+            id: 'fallback',
+            channel: 'email',
+            destination: user.user.email,
+            user_id: assistant.user_id,
+            name: 'User Email (Fallback)',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+          };
+          logger.info({ userId: assistant.user_id, email: user.user.email }, 'Using user email as fallback escalation channel');
+        } else {
+          logger.warn({ userId: assistant.user_id }, 'No escalation channel configured and user email not found');
+        }
+      }
+
+      // Build agent context
+      const agentContext: AgentContext = {
+        assistant,
+        supabase,
+        escalationChannel: escalationChannel!,
+        socialAccount,
+        conversationId,
+        ...(senderUsername ? { senderUsername } : {}),
+      };
+
+      // Build and invoke AI agent with conversation history and context
+      const agent = buildRagAgent(assistant);
 
       // Combine conversation history with the new message
       const allMessages = [...conversationHistory, new HumanMessage(messageText)];
 
-      const result = await agent.invoke({
-        messages: allMessages,
-      });
+      const result = await agent.invoke(
+        {
+          messages: allMessages,
+        },
+        {
+          context: agentContext,
+        }
+      );
 
       const lastMessage = result.messages[result.messages.length - 1];
       const agentResponse =
@@ -93,7 +136,7 @@ export class MessageHandlerService {
           senderId: recipientId,
           recipientId: senderId,
           text: agentResponse,
-          socialAccountId,
+          socialAccountId: socialAccount.id,
           supabase: getSupabaseServiceClient(),
         });
       } else {

@@ -7,9 +7,12 @@ import { MessageHandlerService } from '@/services/instagram-webhook.service';
 import { logger } from '@/config/logger';
 import type { InstagramMessage } from '@/types/instagram';
 import { Messaging } from '@/types/webhook';
+import { env } from '@/config/env';
 
 interface HandoffJobData {
-  messaging: Messaging
+  messaging: Messaging;
+  conversationId: string;
+  senderUsername?: string;
 }
 
 /**
@@ -96,10 +99,23 @@ async function processHandoffJob(job: Job<HandoffJobData>) {
 
     // If message not found in conversation, user probably sent too many messages - do nothing
     if (queuedMessageIndex === -1) {
-      logger.info(
-        { messageText, senderId },
-        'Queued message not found in recent conversation, skipping (user likely sent multiple messages)'
-      );
+      if (env.IS_DEVELOPMENT) {
+        await MessageHandlerService.generateAndSendAIResponse({
+          messageText,
+          senderId,
+          recipientId,
+          accessToken: decryptedToken,
+          assistant,
+          socialAccount: socialAccount.toJSON(),
+          conversationId: job.data.conversationId,
+          ...(job.data.senderUsername ? { senderUsername: job.data.senderUsername } : {}),
+          recentMessages,
+        });
+      } else
+        logger.info(
+          { messageText, senderId },
+          'Queued message not found in recent conversation, skipping (user likely sent multiple messages)'
+        );
       return;
     }
 
@@ -130,7 +146,9 @@ async function processHandoffJob(job: Job<HandoffJobData>) {
         recipientId,
         accessToken: decryptedToken,
         assistant,
-        socialAccountId: socialAccount.id,
+        socialAccount: socialAccount.toJSON(),
+        conversationId: job.data.conversationId,
+        ...(job.data.senderUsername ? { senderUsername: job.data.senderUsername } : {}),
         recentMessages,
       });
 

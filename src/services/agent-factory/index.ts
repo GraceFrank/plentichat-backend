@@ -1,15 +1,70 @@
 import { createAgent } from "langchain";
 import { ChatOpenAI } from "@langchain/openai";
 import { SupabaseClient } from "@supabase/supabase-js";
-import { makeRetrieveTool } from "./tools/retrieveKb";
+import { z } from "zod";
+import tools from "./tools";
 import { Assistant } from "@/types/assistant";
+import { EscalationChannel } from "@/types/escalationChannel";
 import { env } from "@/config/env";
+import { SocialAccountData } from "@/types/SocialAccount";
 
 /**
  * Build a LangChain agent with RAG capabilities
  * Uses the ReACT (Reasoning + Acting) pattern for tool calling and reasoning
  */
-export function buildRagAgent(assistant: Assistant, supabase: SupabaseClient) {
+
+/**
+ * Context that should be passed when invoking the agent
+ * This context is accessible to all tools via config.context
+ */
+export interface AgentContext {
+  assistant: Assistant;
+  supabase: SupabaseClient;
+  escalationChannel: EscalationChannel;
+  socialAccount: SocialAccountData
+  conversationId: string;
+  senderUsername?: string;
+}
+
+const contextSchema = z.object({
+  assistant: z.any(), // Assistant object
+  supabase: z.any(), // SupabaseClient
+  escalationChannel: z.any(), // EscalationChannel
+  socialAccount: z.object({
+    id: z.string(),
+  }),
+  conversationId: z.string(),
+  senderUsername: z.string().optional(),
+});
+
+
+/**
+ * Build a RAG agent with tools for knowledge base retrieval and escalation
+ *
+ * @param assistant - The assistant configuration
+ * @returns Agent instance
+ *
+ * @example
+ * const agent = buildRagAgent(assistant, supabase);
+ *
+ * // Invoke the agent with context
+ * const result = await agent.invoke(
+ *   {
+ *     messages: [{ role: "user", content: "Hello!" }]
+ *   },
+ *   {
+ *     context: {
+ *       assistant,
+ *       supabase,
+ *       escalationChannel,
+ *       socialAccount: { id: "social_123" },
+ *       conversationId: "conv_456",
+ *       senderUsername: "john_doe",
+ *     }
+ *   }
+ * );
+ */
+export function buildRagAgent(assistant: Assistant) {
   // Initialize the LLM with assistant configuration
   const model = new ChatOpenAI({
     model: assistant.llm_model || "gpt-4o-mini",
@@ -17,24 +72,24 @@ export function buildRagAgent(assistant: Assistant, supabase: SupabaseClient) {
     openAIApiKey: env.OPENAI_API_KEY,
   });
 
-
-  // Create the retrieve tool for knowledge base access
-  const retrieveTool = makeRetrieveTool(assistant, supabase);
-
   // Build system prompt from assistant configuration
   const systemPrompt = `You are ${assistant.name}, an AI assistant for Instagram messaging.
 
 ${assistant.ai_persona_instruction || "Help users with their questions in a friendly and professional manner."}
 
-When you need information to answer a question, use the retrieve_kb tool to search the knowledge base.
+When you need information to answer a question, use the retrieve_information_from_kb tool to search the knowledge base.
+If a customer requests to speak with a human or if you cannot help them, use the escalate_to_human tool.
 Always provide helpful, accurate, and concise responses.`;
 
   // Create the ReAct agent with the model, tools, and system prompt
   const agent = createAgent({
     model,
-    tools: [retrieveTool],
+    tools,
     systemPrompt,
+    contextSchema,
   });
 
   return agent;
 }
+
+
