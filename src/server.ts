@@ -1,10 +1,14 @@
 import Fastify, { FastifyRequest } from 'fastify';
 import { env } from '@/config/env';
 import { logger, fastifyLoggerConfig } from '@/config/logger';
+import { initializeSentry } from '@/config/sentry';
 import { errorHandler } from '@/middleware/errorHandler';
 import { registerRoutes } from '@/routes';
 import { registerPlugins } from '@/plugins';
 import messageHandoffWorker from '@/queues/message-handoff/worker';
+
+// Initialize Sentry as early as possible
+initializeSentry();
 
 const fastify = Fastify({
   logger: fastifyLoggerConfig,

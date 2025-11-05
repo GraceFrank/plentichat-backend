@@ -51,6 +51,9 @@ const envSchema = z.object({
 
   FRONTEND_APP_URL: z.string(),
 
+  // Sentry
+  SENTRY_DSN: z.string().optional(),
+
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });
