@@ -136,3 +136,9 @@ export interface SendMessageResponse {
   recipient_id: string;
   message_id: string;
 }
+
+export interface ConversationWithMessages {
+  conversationId: string;
+  messages: InstagramMessage[];
+  senderUsername?: string;
+}

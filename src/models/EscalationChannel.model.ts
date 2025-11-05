@@ -26,7 +26,7 @@ export class EscalationChannel {
   }
 
   get verified(): boolean {
-    return this.data.verified;
+    return this.data.verified ?? false;
   }
 
   get createdAt(): string {

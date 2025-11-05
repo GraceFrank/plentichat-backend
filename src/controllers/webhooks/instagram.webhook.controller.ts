@@ -71,7 +71,7 @@ export class InstagramWebhookController {
 
     try {
       // Fetch conversation history (last 20 messages for comprehensive context)
-      const recentMessages = await InstagramService.getConversationAndMessagesWithIgUserId(
+      const { conversationId, messages: recentMessages, senderUsername } = await InstagramService.getConversationAndMessagesWithIgUserId(
         senderId,
         decryptedToken,
         20
@@ -94,9 +94,8 @@ export class InstagramWebhookController {
           'human-handoff',
           {
             messaging,
-            socialAccountId: socialAccount.id,
-            assistantId: assistant.id,
-            timestamp: new Date().toISOString(),
+            conversationId,
+            ...(senderUsername ? { senderUsername } : {}),
           },
           {
             delay: delayMs,
@@ -113,7 +112,9 @@ export class InstagramWebhookController {
         recipientId,
         accessToken: decryptedToken,
         assistant,
-        socialAccountId: socialAccount.id,
+        socialAccount: socialAccount.toJSON(),
+        conversationId,
+        ...(senderUsername ? { senderUsername } : {}),
         recentMessages,
       });
     } catch (error) {

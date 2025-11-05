@@ -83,7 +83,7 @@ async function processHandoffJob(job: Job<HandoffJobData>) {
 
   try {
     // Fetch conversation history (last 20 messages for comprehensive context)
-    const recentMessages = await InstagramService.getConversationAndMessagesWithIgUserId(
+    const { messages: recentMessages } = await InstagramService.getConversationAndMessagesWithIgUserId(
       senderId,
       decryptedToken,
       20

@@ -7,6 +7,7 @@ import type {
   Conversation,
   InstagramMessage,
   InstagramConversation,
+  IgConversationParticipant,
   Message,
   SendMessageParams,
   ConversationsResponse,
@@ -143,12 +144,13 @@ export default class InstagramService {
    * Uses a two-step approach: first get the conversation, then fetch messages with attachments
    *
    * @param limit - Number of messages to fetch (default: 25, Instagram API default)
+   * @returns Conversation ID, messages, and sender username if available
    */
   static async getConversationAndMessagesWithIgUserId(
     participantId: string,
     accessToken: string,
     limit = 100
-  ): Promise<InstagramMessage[]> {
+  ): Promise<{ conversationId: string; messages: InstagramMessage[]; senderUsername?: string }> {
     try {
       // Step 1: Get the conversation ID for the specific participant
       const conversationsResponse = await axios.get<ConversationsResponse>(
@@ -158,6 +160,7 @@ export default class InstagramService {
             user_id: participantId,
             platform: 'instagram',
             access_token: accessToken,
+            fields: "username"
           },
         }
       );
@@ -165,7 +168,7 @@ export default class InstagramService {
       const conversation = conversationsResponse?.data?.data?.[0];
       if (!conversation) {
         console.log('No conversation found for participant:', participantId);
-        return [];
+        return { conversationId: '', messages: [] };
       }
 
       console.log('Found conversation:', conversation.id);
@@ -186,11 +189,16 @@ export default class InstagramService {
         (a: InstagramMessage, b: InstagramMessage) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime()
       );
 
+      // Get sender username from the participant
+      const senderUsername = conversation.participants?.data?.find(
+        (p: IgConversationParticipant) => p.id === participantId
+      )?.username;
 
-
-
-
-      return messages;
+      return {
+        conversationId: conversation.id,
+        messages,
+        ...(senderUsername ? { senderUsername } : {}),
+      };
     } catch (error) {
       this.handleError(error, 'Get Recent Messages');
     }

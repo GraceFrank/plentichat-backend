@@ -1,4 +1,4 @@
-import { EscalationChannel, EscalationMessageChannel } from '@/types/escalationChannel';
+import { EscalationChannel } from '@/types/escalationChannel';
 import { EmailService } from './email.service';
 import { SMSService } from './sms.service';
 import { frontendPaths } from '@/config/frontend-paths.config';

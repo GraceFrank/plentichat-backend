@@ -49,6 +49,8 @@ const envSchema = z.object({
   BULLBOARD_USER: z.string(),
   BULLBOARD_PASS: z.string(),
 
+  FRONTEND_APP_URL: z.string(),
+
   // Logging
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace']).default('info'),
 });

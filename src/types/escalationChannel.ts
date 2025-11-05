@@ -1,12 +1,16 @@
 
 export interface EscalationChannel {
   id: string;
+  user_id: string;
+  name?: string;
   channel: EscalationMessageChannel;
   destination: string;
-  verified: boolean;
+  verified?: boolean;
   created_at: string;
   updated_at: string;
 }
+
+export type EscalationChannelData = EscalationChannel;
 
 export type EscalationMessageChannel = "SMS" | "email"
 
