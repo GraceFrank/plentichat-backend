@@ -29,17 +29,17 @@ export class HealthController {
         .limit(1);
 
       if (supabaseError) {
-        checks.supabase = 'error';
+        checks['supabase'] = 'error';
         throw new Error(`Supabase health check failed: ${supabaseError.message}`);
       }
-      checks.supabase = 'ok';
+      checks['supabase'] = 'ok';
 
       // Check Redis connection
       try {
         await redis.ping();
-        checks.redis = 'ok';
+        checks['redis'] = 'ok';
       } catch (redisError) {
-        checks.redis = 'error';
+        checks['redis'] = 'error';
         throw new Error(
           `Redis health check failed: ${redisError instanceof Error ? redisError.message : 'Unknown error'}`
         );

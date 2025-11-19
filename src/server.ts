@@ -6,6 +6,7 @@ import { errorHandler } from '@/middleware/errorHandler';
 import { registerRoutes } from '@/routes';
 import { registerPlugins } from '@/plugins';
 import messageHandoffWorker from '@/queues/message-handoff/worker';
+import { closeCheckpointer } from '@/config/checkpointer';
 
 // Initialize Sentry as early as possible
 initializeSentry();
@@ -62,6 +63,7 @@ signals.forEach((signal) => {
     logger.info(`Received ${signal}, shutting down gracefully...`);
     await fastify.close();
     await messageHandoffWorker.close();
+    await closeCheckpointer();
     logger.info('Server and workers shut down successfully');
     process.exit(0);
   });

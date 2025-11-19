@@ -2,6 +2,7 @@ import { createAgent } from "langchain";
 import { ChatOpenAI } from "@langchain/openai";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
+import type { BaseCheckpointSaver } from '@langchain/langgraph-checkpoint';
 import tools from "./tools";
 import { Assistant } from "@/types/assistant";
 import { EscalationChannel } from "@/types/escalationChannel";
@@ -42,12 +43,18 @@ const contextSchema = z.object({
  * Build a RAG agent with tools for knowledge base retrieval and escalation
  *
  * @param assistant - The assistant configuration
+ * @param checkpointSaver - Optional Redis checkpointer for conversation memory
  * @returns Agent instance
  *
  * @example
- * const agent = buildRagAgent(assistant, supabase);
+ * // Without memory (stateless)
+ * const agent = buildRagAgent(assistant);
  *
- * // Invoke the agent with context
+ * // With memory (stateful using Redis)
+ * const checkpointer = await getCheckpointer();
+ * const agent = buildRagAgent(assistant, checkpointer);
+ *
+ * // Invoke the agent with context and thread_id for memory
  * const result = await agent.invoke(
  *   {
  *     messages: [{ role: "user", content: "Hello!" }]
@@ -60,11 +67,12 @@ const contextSchema = z.object({
  *       socialAccount: { id: "social_123" },
  *       conversationId: "conv_456",
  *       senderUsername: "john_doe",
- *     }
+ *     },
+ *     configurable: { thread_id: "session-123" } // For memory persistence
  *   }
  * );
  */
-export function buildRagAgent(assistant: Assistant) {
+export function buildRagAgent(assistant: Assistant, checkpointSaver?: BaseCheckpointSaver) {
   // Initialize the LLM with assistant configuration
   const model = new ChatOpenAI({
     model: assistant.llm_model || "gpt-4o-mini",
@@ -87,6 +95,7 @@ Always provide helpful, accurate, and concise responses.`;
     tools,
     systemPrompt,
     contextSchema,
+    ...(checkpointSaver ? { checkpointer: checkpointSaver } : {}), // Add checkpointer if provided
   });
 
   return agent;
