@@ -44,6 +44,7 @@ const envSchema = z.object({
 
   // Redis
   REDIS_URL: z.string(),
+  REDIS_CHECKPOINTER_URL: z.string(),
 
   // Bull Board (Queue Dashboard)
   BULLBOARD_USER: z.string(),

@@ -1,9 +1,10 @@
 import { RedisSaver } from '@langchain/langgraph-checkpoint-redis';
 import { logger } from './logger';
+import { env } from './env';
 
 let redisSaver: RedisSaver | null = null;
 
-const REDIS_URL = "redis://default:ASpsAAIncDJlYjBhYWIyNTBiZWQ0MDk1OTVkMWUyNDE1NDQ2MTQxM3AyMTA4NjA@noted-penguin-10860.upstash.io:6379";
+const REDIS_URL=env.REDIS_CHECKPOINTER_URL
 
 /**
  * Initialize Redis checkpointer for conversation state persistence
@@ -27,8 +28,6 @@ export async function initializeCheckpointer(): Promise<RedisSaver> {
     });
 
     logger.info('✓ Redis checkpointer initialized successfully');
-    logger.info('✓ TTL: 60 minutes (1 hour, refreshed on read)');
-    logger.info('✓ Redis checkpointer ready to save conversation state');
 
     return redisSaver;
   } catch (error) {

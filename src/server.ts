@@ -66,7 +66,7 @@ signals.forEach((signal) => {
     await closeCheckpointer();
     logger.info('Server and workers shut down successfully');
     process.exit(0);
-  });
+  }); 
 });
 
 start();
