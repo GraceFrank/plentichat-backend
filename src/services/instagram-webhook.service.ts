@@ -48,14 +48,16 @@ export class MessageHandlerService {
     } = params;
 
     try {
-      // Convert Instagram messages to LangChain format for context
+      // Convert Instagram messages to LangChain format for context with timezone awareness
       let conversationHistory: BaseMessage[] = [];
       if (recentMessages.length > 0) {
+        const timezone = assistant.timezone || 'UTC';
         conversationHistory = InstagramService.convertInstagramMessagesToLangChainFormat(
           recentMessages,
-          recipientId
+          recipientId,
+          timezone
         );
-        logger.info({ historyLength: conversationHistory.length }, 'Converted conversation history');
+        logger.info({ historyLength: conversationHistory.length, timezone }, 'Converted conversation history');
       }
 
       const supabase = getSupabaseServiceClient();

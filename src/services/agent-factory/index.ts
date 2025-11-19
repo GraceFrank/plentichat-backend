@@ -3,6 +3,7 @@ import { ChatOpenAI } from "@langchain/openai";
 import { SupabaseClient } from "@supabase/supabase-js";
 import { z } from "zod";
 import type { BaseCheckpointSaver } from '@langchain/langgraph-checkpoint';
+import { DateTime } from "luxon";
 import tools from "./tools";
 import { Assistant } from "@/types/assistant";
 import { EscalationChannel } from "@/types/escalationChannel";
@@ -80,14 +81,24 @@ export function buildRagAgent(assistant: Assistant, checkpointSaver?: BaseCheckp
     openAIApiKey: env.OPENAI_API_KEY,
   });
 
+  // Get current date and time for temporal awareness using assistant's timezone
+  const userTimezone = assistant.timezone || 'UTC';
+  const currentDateTime = DateTime.now()
+    .setZone(userTimezone)
+    .toFormat('cccc, MMMM d, yyyy \'at\' h:mm a ZZZZ');
+
   // Build system prompt from assistant configuration
   const systemPrompt = `You are ${assistant.name}, an AI assistant for Instagram messaging.
+
+Current Date and Time: ${currentDateTime}
 
 ${assistant.ai_persona_instruction || "Help users with their questions in a friendly and professional manner."}
 
 When you need information to answer a question, use the retrieve_information_from_kb tool to search the knowledge base.
 If a customer requests to speak with a human or if you cannot help them, use the escalate_to_human tool.
-Always provide helpful, accurate, and concise responses.`;
+Always provide helpful, accurate, and concise responses.
+
+IMPORTANT: All message timestamps in the conversation history are shown in square brackets []. Use these timestamps to understand when messages were sent and provide contextually appropriate responses based on the time of day and date.`;
 
   // Create the ReAct agent with the model, tools, and system prompt
   const agent = createAgent({

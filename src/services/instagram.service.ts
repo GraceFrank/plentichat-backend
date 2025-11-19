@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { env } from '@/config/env';
 import { HumanMessage, AIMessage, BaseMessage } from 'langchain';
+import { DateTime } from 'luxon';
 import type {
   ConversationMessage,
   IgUserProfile,
@@ -207,14 +208,24 @@ export default class InstagramService {
   /**
    * Convert Instagram messages to LangChain BaseMessage format for AI context
    * Maps Instagram messages to HumanMessage (from user) or AIMessage (from bot)
+   * Includes timestamps in the message content for temporal awareness
    */
   static convertInstagramMessagesToLangChainFormat(
     messages: InstagramMessage[],
-    igAccountId: string
+    igAccountId: string,
+    timezone: string = 'UTC'
   ): BaseMessage[] {
     return messages.map((msg) => {
       const isFromBot = msg.from.id === igAccountId;
-      const content = msg.message || '';
+      const messageText = msg.message || '';
+
+      // Format timestamp in a readable format with timezone
+      const timestamp = DateTime.fromISO(msg.created_time)
+        .setZone(timezone)
+        .toFormat('MMM d, h:mm a');
+
+      // Include timestamp in message content
+      const content = `[${timestamp}] ${messageText}`;
 
       if (isFromBot) {
         return new AIMessage(content);
