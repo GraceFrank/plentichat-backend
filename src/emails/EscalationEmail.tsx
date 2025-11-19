@@ -41,10 +41,10 @@ export default function EscalationEmail({
           </Section>
 
           {/* Main Content */}
-          <Heading style={heading}>🚨 Escalation Alert</Heading>
+          <Heading style={heading}>👋 Customer Needs Your Attention</Heading>
 
           <Text style={text}>
-            <strong>{userName}</strong> needs your attention:
+            <strong>{userName}</strong> needs your help:
           </Text>
 
           <Section style={quoteBox}>
