@@ -207,7 +207,7 @@ export class InstagramController {
 
       return reply.send({
         success: true,
-        messageId: result.message_id || result.id,
+        messageId: result.message_id,
       });
     } catch (error) {
       logger.error({ err: error }, 'Error in sendMessage controller');
