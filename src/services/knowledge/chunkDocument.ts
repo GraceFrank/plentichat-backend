@@ -1,5 +1,5 @@
-import { Document } from "langchain/document";
-import { RecursiveCharacterTextSplitter } from "langchain/text_splitter";
+import { Document } from "@langchain/core/documents";
+import { RecursiveCharacterTextSplitter } from "@langchain/textsplitters";
 
 export async function chunkDocuments(docs: Document[]) {
   const splitter = new RecursiveCharacterTextSplitter({

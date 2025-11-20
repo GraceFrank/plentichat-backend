@@ -3,6 +3,8 @@ import { EmailService } from './email.service';
 import { SMSService } from './sms.service';
 import { frontendPaths } from '@/config/frontend-paths.config';
 import { logger } from '@/config/logger';
+import * as React from 'react';
+import EscalationEmail from '@/emails/EscalationEmail';
 
 interface EscalationParams {
   summary: string; // short summary (from AI)
@@ -74,12 +76,7 @@ export default class AgentEscalationService {
   }) {
     if (!to) throw new Error('Recipient email required.');
 
-    // Dynamic import to avoid circular dependencies and only load when needed
-    const React = await import('react');
-    const { default: EscalationEmail } = await import('@/emails/EscalationEmail');
-
-    const emailProps
-      = {
+    const emailProps = {
       context,
       link,
       userName

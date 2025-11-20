@@ -8,8 +8,11 @@ import type { AgentContext } from "..";
  * Allows the agent to query the current time in the user's timezone
  */
 const currentTimeTool = tool(
-  async (_input: Record<string, never>, config: { context: AgentContext }) => {
-    const context = config.context;
+  async (_input: Record<string, never>, config?: { context?: AgentContext }) => {
+    const context = config?.context;
+    if (!context) {
+      throw new Error('Agent context is required');
+    }
     const timezone = context.assistant.timezone || 'UTC';
 
     const now = DateTime.now().setZone(timezone);

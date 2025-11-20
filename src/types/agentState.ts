@@ -1,6 +1,6 @@
 import { BaseMessage } from '@langchain/core/messages';
 import { Assistant } from '@/types/assistant';
-import { Document } from 'langchain/document';
+import { Document } from '@langchain/core/documents';
 import { DynamicTool } from '@langchain/core/tools';
 
 export interface RetrievalGraphState {

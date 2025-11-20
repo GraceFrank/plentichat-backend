@@ -145,6 +145,9 @@ export async function sendChatMessage(
     }
 
     const lastMessage = result.messages[result.messages.length - 1];
+    if (!lastMessage) {
+      throw new Error('No response from agent');
+    }
     const agentResponse =
       typeof lastMessage.content === 'string'
         ? lastMessage.content

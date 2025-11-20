@@ -1,10 +1,10 @@
 import { CSVLoader } from "@langchain/community/document_loaders/fs/csv";
 import { PDFLoader } from "@langchain/community/document_loaders/fs/pdf";
-import { TextLoader } from "langchain/document_loaders/fs/text";
+import { TextLoader } from "@langchain/classic/document_loaders/fs/text";
 import { DocxLoader } from "@langchain/community/document_loaders/fs/docx";
 import { CheerioWebBaseLoader } from "@langchain/community/document_loaders/web/cheerio";
 import { Document } from "@langchain/core/documents";
-import { JSONLoader } from "langchain/document_loaders/fs/json";
+import { JSONLoader } from "@langchain/classic/document_loaders/fs/json";
 
 import { SourceType } from "@/types/knowledge";
 
