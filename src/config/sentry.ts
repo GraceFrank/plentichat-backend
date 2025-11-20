@@ -1,5 +1,4 @@
 import * as Sentry from '@sentry/node';
-import { nodeProfilingIntegration } from '@sentry/profiling-node';
 import { env } from './env';
 
 /**
@@ -10,6 +9,18 @@ export function initializeSentry() {
     console.warn('Sentry DSN not configured, skipping Sentry initialization');
     return;
   }
+
+  // Try to load profiling integration (may not be available in all environments)
+  let profilingIntegration;
+  try {
+    const { nodeProfilingIntegration } = require('@sentry/profiling-node');
+    profilingIntegration = nodeProfilingIntegration();
+    console.log('✓ Sentry profiling integration loaded');
+  } catch (error) {
+    console.warn('⚠️  Sentry profiling not available (this is normal in development/Docker):', (error as Error).message);
+  }
+
+  const integrations = profilingIntegration ? [profilingIntegration] : [];
 
   Sentry.init({
     dsn: env.SENTRY_DSN,
@@ -23,10 +34,7 @@ export function initializeSentry() {
     // In production, consider reducing this to a lower percentage
     profilesSampleRate: env.NODE_ENV === 'production' ? 0.1 : 1.0,
 
-    integrations: [
-      // Add profiling integration
-      nodeProfilingIntegration(),
-    ],
+    integrations,
 
     // Filter out sensitive data
     beforeSend(event, hint) {
