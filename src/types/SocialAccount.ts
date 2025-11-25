@@ -11,6 +11,5 @@ export interface SocialAccountData {
     token_expires_at: string;
     assistant_id?: string;
     is_active: boolean;
-    reply_timeout_seconds: number;
-    assistant?: Assistant
+    assistant?: Assistant 
 }

@@ -86,7 +86,7 @@ export class InstagramWebhookController {
 
       if (lastSender === 'HUMAN') {
         // Last message was from a human, add to queue for human handoff with delay
-        const replyTimeoutSeconds = socialAccount.replyTimeoutSeconds;
+        const replyTimeoutSeconds = assistant.reply_timeout_seconds ?? 0;
         const delayMs = replyTimeoutSeconds * 1000;
 
         logger.info(`Last message was from HUMAN. Adding to queue with ${replyTimeoutSeconds}s delay for handoff.`);

@@ -12,9 +12,10 @@ export interface Assistant {
   schedule_start_time: string | null;
   schedule_end_time: string | null;
   timezone: string;
+  reply_timeout_seconds?: number;
   created_at: string;
   updated_at: string;
   llm_model_temperature: number | null;
   escalation_channel_id: string | null;
-  escalationChannel?: EscalationChannelData;
+  escalationChannel?: EscalationChannelData; 
 }

@@ -13,7 +13,7 @@ export class Assistant {
   get id(): string {
     return this.data.id;
   }
-
+ 
   get userId(): string {
     return this.data.user_id;
   }
@@ -60,6 +60,10 @@ export class Assistant {
 
   get timezone(): string {
     return this.data.timezone;
+  }
+
+  get replyTimeoutSeconds(): number {
+    return this.data.reply_timeout_seconds ?? 0;
   }
 
   get createdAt(): string {

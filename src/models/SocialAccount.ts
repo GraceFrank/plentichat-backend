@@ -50,10 +50,8 @@ export class SocialAccount {
     return this.data.assistant;
   }
 
-  get replyTimeoutSeconds(): number {
-    return this.data.reply_timeout_seconds;
-  }
 
+ 
   /**
    * Get decrypted access token
    * Caches the decrypted token to avoid multiple decryption calls

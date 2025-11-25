@@ -87,7 +87,6 @@ export async function sendChatMessage(
         access_token: '',
         token_expires_at: new Date().toISOString(),
         is_active: true,
-        reply_timeout_seconds: 0,
       },
       conversationId: chatSessionId,
     };
