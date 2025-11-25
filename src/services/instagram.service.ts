@@ -150,7 +150,8 @@ export default class InstagramService {
   static async getConversationAndMessagesWithIgUserId(
     participantId: string,
     accessToken: string,
-    limit = 100
+    limit = 100,
+    orderBy: 'oldest' | 'newest' = 'oldest'
   ): Promise<{ conversationId: string; messages: InstagramMessage[]; senderUsername?: string }> {
     try {
       // Step 1: Get the conversation ID for the specific participant
@@ -186,8 +187,14 @@ export default class InstagramService {
         }
       );
 
+      // Sort messages based on orderBy parameter
+      // 'oldest' = ascending (oldest first), 'newest' = descending (newest first)
       const messages = (messagesResponse?.data?.data || []).sort(
-        (a: InstagramMessage, b: InstagramMessage) => new Date(a.created_time).getTime() - new Date(b.created_time).getTime()
+        (a: InstagramMessage, b: InstagramMessage) => {
+          const timeA = new Date(a.created_time).getTime();
+          const timeB = new Date(b.created_time).getTime();
+          return orderBy === 'oldest' ? timeA - timeB : timeB - timeA;
+        }
       );
 
       // Get sender username from the participant

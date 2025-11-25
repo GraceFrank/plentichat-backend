@@ -83,18 +83,23 @@ async function processHandoffJob(job: Job<HandoffJobData>) {
 
   try {
     // Fetch conversation history (last 20 messages for comprehensive context)
+    // Order by 'newest' first for easier logic when checking if human replied after queued message
     const { messages: recentMessages } = await InstagramService.getConversationAndMessagesWithIgUserId(
       senderId,
       decryptedToken,
-      20
+      20,
+      'newest'
     );
 
 
     logger.info({ messageCount: recentMessages.length }, 'Fetched recent messages from Instagram');
 
     // Step 2: Find the index of the original queued message
+    // Use mid (message ID) for more accurate matching if available, otherwise fall back to text matching
     const queuedMessageIndex = recentMessages.findIndex(
-      (msg: InstagramMessage) => msg.message === messageText && msg.from.id === senderId
+      (msg: InstagramMessage) =>
+        (message.mid && msg.id === message.mid) ||
+        (msg.message === messageText && msg.from.id === senderId)
     );
 
     // If message not found in conversation, user probably sent too many messages - do nothing
