@@ -142,12 +142,12 @@ export class InstagramWebhookController {
         hasToken: !!query['hub.verify_token'],
         hasChallenge: !!query['hub.challenge'],
       },
-      'Received webhook verification request'
+      'Received webhook verification request' 
     );
 
     if (
       query['hub.mode'] === 'subscribe' &&
-      query['hub.verify_token'] === env.META_VERIFY_TOKEN
+      query['hub.verify_token'] === env.INSTAGRAM_WEBHOOK_VERIFY_TOKEN
     ) {
       logger.info('Webhook verification successful');
       return reply.status(200).type('text/plain').send(query['hub.challenge']);
