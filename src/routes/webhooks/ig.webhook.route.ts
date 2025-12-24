@@ -22,7 +22,7 @@ export async function instagramWebhookRoutes(fastify: FastifyInstance) {
   fastify.post(
     '/webhooks/instagram',
     {
-      preHandler: [verifyMetaSignature(env.INSTAGRAM_APP_SECRET)],
+      preHandler: [verifyMetaSignature(env.META_APP_SECRET)],
     },
     InstagramWebhookController.handleWebhookEvent
   );

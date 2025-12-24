@@ -17,10 +17,15 @@ const envSchema = z.object({
   SUPABASE_API_KEY: z.string(), // Service role key
   SUPABASE_ANON_KEY: z.string(), // Public anon key for RLS
 
-  // Instagram/Meta
-  INSTAGRAM_APP_SECRET: z.string(),
-  META_VERIFY_TOKEN: z.string(),
+  // Meta (Instagram/WhatsApp)
+  META_APP_SECRET: z.string(),
+
+  // Instagram
+  INSTAGRAM_WEBHOOK_VERIFY_TOKEN: z.string(),
   INSTAGRAM_API_BASE_URL: z.string().default('https://graph.instagram.com/v23.0'),
+
+  // WhatsApp
+  WHATSAPP_WEBHOOK_VERIFY_TOKEN: z.string(),
 
   // Google Cloud KMS
   GOOGLE_PROJECT_ID: z.string(),
